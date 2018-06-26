@@ -7,6 +7,8 @@
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
+    "chalk": "^2.4.1",
+    "config": "^1.30.0",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "event-stream": "^3.3.4",
