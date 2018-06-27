@@ -22,20 +22,37 @@
 <main style="background-color: #fafafa">
     <div class="container">
 
-        <h4 class="header">Login</h4>
-        <div class="row">
-            <div class="col s12">
-                <div class="card">
-                    <div class="card-content">
-                        <div style="width: 100%">
+        <div id="login">
+            <h4 class="header">Login</h4>
+            <div class="row">
+                <div class="col s12">
+                    <div class="card">
+                        <div class="card-content">
+                            <a id="btnLogin" class="waves-effect waves-light btn" style="margin-top: 20px">LOGIN</a>
                         </div>
-                        <a id="btnLogin" class="waves-effect waves-light btn" style="margin-top: 20px">LOGIN</a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <h4 class="header">SETUP SDK</h4>
+        <div id="logout">
+            <h4 class="header">Logout</h4>
+            <div class="row">
+                <div class="col s12">
+                    <div class="card">
+                        <div class="card-content">
+                            <div>
+                                User: <span id="userId"></span>
+                            </div>
+                            <a id="btnLogout" class="waves-effect waves-light btn" style="margin-top: 20px">LOGOUT</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <h4 class="header">Keys</h4>
         <div class="row">
             <div class="col s12">
                 <div class="card">
@@ -47,7 +64,6 @@
                             <b>Private Key:</b>
                             <div style="word-wrap: break-word;" id="privateKey"></div>
                         </div>
-                        <a id="btnSetupSdk" class="waves-effect waves-light btn" style="margin-top: 20px">SETUP SDK</a>
                     </div>
                 </div>
             </div>

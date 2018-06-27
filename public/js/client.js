@@ -1,56 +1,73 @@
 window.clientURL = 'http://localhost:3000';
 
-const ownAccessToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvd25lcjo0ODZiODZjZS0wODIzLTQxYjAtYmFjNy1jNDliYTdkN2Y2ZTgiLCJpc3MiOiJ1cm46Z2hjIiwiZXhwIjoxNTI4Mjc4Mzk4LCJuYmYiOjE1MjgyNzQ2NzgsImlhdCI6MTUyODI3NDczOCwianRpIjoiNjVhZjk4NTUtMTI0OS00OWY5LTljMzktYzZkNzlhNWMwYWIzIiwiZ2hjOmFpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMCIsImdoYzpjaWQiOiIyIiwiZ2hjOnVpZCI6IjQ4NmI4NmNlLTA4MjMtNDFiMC1iYWM3LWM0OWJhN2Q3ZjZlOCIsImdoYzpzY29wZSI6ImV4YyBwZXJtOnIgcGVybTp3IHJlYzpyIHJlYzp3IGF0dGFjaG1lbnQ6ciBhdHRhY2htZW50OncgdXNlcjpyIHVzZXI6dyB1c2VyOnEifQ.Q2Mr1zuIlLCoQErsXUjsPWzhPEyS5UZBzb17F-HU15Gr1gpV8EePHhZEheDRyBn8aSo_87yoe0hK2tnMBuzM1eha5ExrGKzY8MQYjex7osTOsL2pIMIs7KDpphJiJlmws51L76vy1v2QgHhUfmuqzAQQEWoPoZG3u4mtCOSzjIZnr_6XSVnQXQVt3pGrD9JkfP6QYQV036euEEfqa0TTStupJ2wpdVE8NE1FhtQaf5ICu20MHw7fsJRaBGFCRH4BADZTyWlC3oytAGej81SKVoMbBPRDQPBkBvrn_VWQLghfmH5rUnZ-MlRCadF41h3Y6tqarA7HiK3mcXtaDx-jvyObDXT9FUbtfJ-9Zo8Q7rgPF5xVoQeLC5E2fjtvsDbEppcZj7FWa0l0e3sK7bZDVzkDf6XoSsiLdWa-i7leNuv9xjWWIBnMQnCqwCv65jD05WTIzYxixM602AsZt9WNaoknOLeKMEuKADcNlm7h7Kzt1kfyd9f3o87pW809hn2uaNSzI6cxLpmpDEZc4iH_oq2HothxXBXwTeIIjyv_zbNEBhlLPoglHZTWkPkOSP9tdIJYSN1cCmLLAUo9KOrooy1xvOs5eJgSveL9FTx1lJ-elGcX8B1ZH1u0vQDxQro2WKngJ8q4zDyntkRPqvZLFHFlG8ophcEQMRwG-Q6oSPg";
-const ownUserId = "486b86ce-0823-41b0-bac7-c49ba7d7f6e8";
-
 const dummyFile = createDummyFile();
 
 document.addEventListener("DOMContentLoaded", function () {
-    const userId = GC.SDK.getCurrentUserId();
-    const appId = GC.SDK.getCurrentAppId();
+    init();
 
-    console.log(userId);
-    console.log(appId);
+    showKeys("", "");
 
-    /* SETUP Authentification */
-    showKeys(localStorage.getItem('publicKey'), localStorage.getItem('privateKey'));
-
-    document.getElementById("btnSetupSdk").addEventListener("click", setupSdk);
     document.getElementById("btnLogin").addEventListener("click", login);
+    document.getElementById("btnLogout").addEventListener("click", logout);
     document.getElementById("btnLoadData").addEventListener("click", loadData);
     document.getElementById("btnUploadData").addEventListener("click", uploadData);
 });
 
+function httpGetAsync(theUrl, callback)
+{
+    const xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState === 4)
+            callback(JSON.parse(xmlHttp.response));
+    };
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+function httpPostAsync(theUrl,data, callback)
+{
+    const xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState === 4)
+            callback(xmlHttp.status);
+    };
+    xmlHttp.open("POST", theUrl, true); // true for asynchronous
+    xmlHttp.send(JSON.stringify(data));
+}
+
+function init() {
+    httpGetAsync('auth/token', (data) =>{
+        if(data.Token){
+            GC.SDK.setup('tmcc-aid-local', data.PrivateKey, () => {
+                return new Promise(function (resolve) {
+                    resolve(data.Token);
+                })
+            }).then(() =>{
+                drawLoginState();
+            });
+        } else {
+            drawLoginState();
+        }
+    });
+}
+
 function login() {
     GC.SDK.createCAP().then((keys) => {
-        localStorage.setItem('publicKey', keys.publicKey);
-        localStorage.setItem('privateKey', keys.privateKey);
-
         showKeys(keys.publicKey, keys.privateKey);
+        httpPostAsync('auth/keys', {
+            public_key: keys.publicKey,
+            private_key: keys.privateKey
+        }, () => {});
 
         window.location.href = clientURL + '/auth/gc?public_key=' + keys.publicKey;
     });
 }
 
-function setupSdk() {
-    GC.SDK.createCAP().then((keys) => {
-        localStorage.setItem('publicKey', keys.publicKey);
-        localStorage.setItem('privateKey', keys.privateKey);
-        showKeys(keys.publicKey, keys.privateKey);
-
-        // GET ERRRO cant get user ID
-        const promise = GC.SDK.setup(
-            window.clientId,
-            keys.privateKey,
-            function () {
-                return new Promise(function (resolve) {
-                    //imporiert --> wie kann ich den OAuth realisieren?
-                    resolve(ownAccessToken);
-                })
-            }
-        );
-    })
+function logout() {
+    window.location.href = '/logout';
 }
+
+
 
 function loginOverAuthSdk() {
     /* LOGIN over HPI Auth */
@@ -69,14 +86,19 @@ function loginOverAuthSdk() {
 }
 
 function loadData() {
+    const userId = GC.SDK.getCurrentUserId();
+
     console.log("LOAD DATA");
     console.log("==========");
-    GC.SDK.getDocuments(ownUserId, {}).then((data) => {
+
+    GC.SDK.getDocuments(userId, {}).then((data) => {
         console.log(data);
     })
 }
 
 function uploadData() {
+    const userId = GC.SDK.getCurrentUserId();
+
     console.log("UPLAOD DATA");
     console.log("==========");
 
@@ -95,8 +117,8 @@ function uploadData() {
     });
 
     console.log("Document: ", document);
-    GC.SDK.uploadDocument(ownUserId, document)
-        .then((response) => console.log(response));
+    GC.SDK.uploadDocument(userId, document)
+        .then((response) => console.log("Result Document: ", response));
 
 
 }
@@ -122,4 +144,17 @@ function createDummyFile() {
 function showKeys(publicKey, privateKey) {
     document.getElementById("publicKey").textContent = publicKey;
     document.getElementById("privateKey").textContent = privateKey;
+}
+
+function drawLoginState(){
+    const userId = GC.SDK.getCurrentUserId();
+    if(userId){
+        document.getElementById("login").style.display = 'none';
+        document.getElementById("logout").style.display = 'block';
+        document.getElementById("userId").textContent = userId;
+
+    } else {
+        document.getElementById("login").style.display = 'block';
+        document.getElementById("logout").style.display = 'none';
+    }
 }
