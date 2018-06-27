@@ -60,7 +60,6 @@ dictManager.init()
 
 //Routes
 app.use('/', require('./routes/index'));
-app.use('/', require('./routes/redirects_gc_auth'));
 app.use('/auth', require('./routes/auth'));
 app.use('/api/v1', require('./routes/api_v1'));
 

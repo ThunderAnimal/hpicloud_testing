@@ -1,4 +1,5 @@
-window.clientURL = 'http://localhost:3000';
+window.clientURL = 'http://localhost:3000/auth';
+window.clientId = 'tmcc-aid-local';
 
 const dummyFile = createDummyFile();
 
@@ -36,54 +37,49 @@ function httpPostAsync(theUrl,data, callback)
 }
 
 function init() {
-    httpGetAsync('auth/token', (data) =>{
-        if(data.Token){
-            GC.SDK.setup('tmcc-aid-local', data.PrivateKey, () => {
-                return new Promise(function (resolve) {
-                    resolve(data.Token);
-                })
-            }).then(() =>{
-                drawLoginState();
-            });
-        } else {
-            drawLoginState();
-        }
-    });
-}
-
-function login() {
-    GC.SDK.createCAP().then((keys) => {
-        showKeys(keys.publicKey, keys.privateKey);
-        httpPostAsync('auth/keys', {
-            public_key: keys.publicKey,
-            private_key: keys.privateKey
-        }, () => {});
-
-        window.location.href = clientURL + '/auth/gc?public_key=' + keys.publicKey;
-    });
-}
-
-function logout() {
-    window.location.href = '/logout';
-}
-
-
-
-function loginOverAuthSdk() {
-    /* LOGIN over HPI Auth */
-
     GC.AUTH.config({
         clientId: window.clientId,
         clientURL: window.clientURL,
     });
-    // TODO Implement OAuth Client, kein Plan wie die API da funktionert.... habe ich etwas falsch konfiguriert?
-    // fehlenden Routes , /login, /gctoken, /gckeys
+
     GC.AUTH.loggedIn.then((isLoggedIn) => {
-        if (!isLoggedIn) {
-            GC.AUTH.login();
-        }
+        drawLoginState();
     });
+
+    // httpGetAsync('auth/token', (data) =>{
+    //     if(data.Token){
+    //         GC.SDK.setup(clientId, data.PrivateKey, () => {
+    //             return new Promise(function (resolve) {
+    //                 resolve(data.Token);
+    //             })
+    //         }).then(() =>{
+    //             drawLoginState();
+    //         });
+    //     } else {
+    //         drawLoginState();
+    //     }
+    // });
 }
+
+function login() {
+    // GC.SDK.createCAP().then((keys) => {
+    //     showKeys(keys.publicKey, keys.privateKey);
+    //     httpPostAsync('auth/keys', {
+    //         public_key: keys.publicKey,
+    //         private_key: keys.privateKey
+    //     }, () => {});
+    //
+    //     window.location.href = clientURL + '/gclogin?public_key=' + keys.publicKey;
+    // });
+
+    GC.AUTH.login();
+}
+
+function logout() {
+    GC.SDK.reset();
+    window.location.href = '/logout';
+}
+
 
 function loadData() {
     const userId = GC.SDK.getCurrentUserId();
