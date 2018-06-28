@@ -19,7 +19,7 @@ function httpGetAsync(theUrl, callback)
     const xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() {
         if (xmlHttp.readyState === 4)
-            callback(JSON.parse(xmlHttp.response));
+            callback(xmlHttp.response);
     };
     xmlHttp.open("GET", theUrl, true); // true for asynchronous
     xmlHttp.send(null);
@@ -77,7 +77,9 @@ function login() {
 
 function logout() {
     GC.SDK.reset();
-    window.location.href = '/logout';
+    httpGetAsync('/auth/logout', () =>{
+        init();
+    });
 }
 
 

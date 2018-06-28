@@ -1,4 +1,7 @@
 module.exports = {
+    client: {
+        webAppUrl: "/client"
+    },
     server:{
         adresse: "http://localhost",
         port:  3000,

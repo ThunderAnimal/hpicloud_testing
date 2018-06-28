@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
+const config = require("config");
 
 router.get('/gctoken', function (req, res) {
    if(!req.isAuthenticated()){
@@ -45,9 +46,17 @@ router.get('/gclogin', function(req, res, next) {
     })(req, res);
 });
 
-router.get('/gc/callback', passport.authenticate('oauth2', {failureRedirect: '/'}),
+router.get('/gc/callback', passport.authenticate('oauth2', {failureRedirect: config.client.webAppUrl}),
     function (req, res) {
-        res.redirect("/");
+        res.redirect(config.client.webAppUrl);
     });
+
+//Logout
+router.get('/logout', function(req, res){
+    req.logout();
+    req.session.regenerate((err) =>{
+        res.sendStatus(200);
+    });
+});
 
 module.exports = router;

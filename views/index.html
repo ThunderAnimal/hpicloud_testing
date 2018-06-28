@@ -1,121 +1,48 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <title>HPI Cloud Test</title>
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>AID - CBA Modul</title>
+    <base href="/">
 
-    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection"/>
-    <link type="text/css" rel="stylesheet" href="css/style.css" media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="icon" type="image/x-icon" href="favicon.ico"> -->
+    <link rel="icon" type="image/x-icon" href="../assets/logo3_01_8.png" sizes="any">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-</head>
-<body>
-<header>
-    <div class="navbar-fixed">
-        <nav>
-            <div class="nav-wrapper">
-                <a href="#!" class="brand-logo">HPI Cloud Test</a>
-            </div>
-        </nav>
-    </div>
-</header>
-<main style="background-color: #fafafa">
-    <div class="container">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Robot Font -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 
-        <div id="login">
-            <h4 class="header">Login</h4>
-            <div class="row">
-                <div class="col s12">
-                    <div class="card">
-                        <div class="card-content">
-                            <a id="btnLogin" class="waves-effect waves-light btn" style="margin-top: 20px">LOGIN</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- <link href="theme.scss" rel="stylesheet"> -->
 
-        <div id="logout">
-            <h4 class="header">Logout</h4>
-            <div class="row">
-                <div class="col s12">
-                    <div class="card">
-                        <div class="card-content">
-                            <div>
-                                User: <span id="userId"></span>
-                            </div>
-                            <a id="btnLogout" class="waves-effect waves-light btn" style="margin-top: 20px">LOGOUT</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#680059">
 
 
-        <h4 class="header">Keys</h4>
-        <div class="row">
-            <div class="col s12">
-                <div class="card">
-                    <div class="card-content">
-                        <div>
-                            <b>Public Key:</b>
-                            <div style="word-wrap: break-word;" id="publicKey"></div>
-                            <br>
-                            <b>Private Key:</b>
-                            <div style="word-wrap: break-word;" id="privateKey"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <link rel="stylesheet" href="../styles.c41396d4f131d2e76965.css"></head>
+  <body class="mat-app-background"> 
+    <!-- All Content rendered with Roboto Font -->
+    <section class="mat-typography">
+      <!-- <app-root>Loading...</app-root> -->
+      <app-root></app-root>
 
-        <h4 class="header">GET DATA</h4>
-        <div class="row">
-            <div class="col s12">
-                <div class="card">
-                    <div class="card-content">
-                        <div style="width: 100%">
-                        </div>
-                        <a id="btnLoadData" class="waves-effect waves-light btn" style="margin-top: 20px">LOAD DATA</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <!-- Splash Screen-->
+      <div class="splash" id="content">
+        <h1>AID - CBA App</h1>
+        <!-- <p>Loading</p> -->
+        <img src="/assets/logo3.svg" width="256px" alt="AID - CBA  logo">
+     </div>
 
-        <h4 class="header">UPLOAD DATA</h4>
-        <div class="row">
-            <div class="col s12">
-                <div class="card">
-                    <div class="card-content">
-                        <div style="width: 100%">
-                            <b>JSON-Content:</b>
-                            <div style="word-wrap: break-word;">
-                                SA_Text: "Hello world",
-                                PHQ_9: 5
-                            </div>
-                            <b>Downlad Dummy-File:</b>
-                            <div id="dummyFile">
 
-                            </div>
-                        </div>
-                        <a id="btnUploadData" class="waves-effect waves-light btn" style="margin-top: 20px">UPLOAD DATA</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
-<footer class="page-footer" style="padding-top: 0">
-    <div class="footer-copyright">
-        <div class="container">
-            © 2018 Copyright Text
-            <a class="grey-text text-lighten-4 right" href="#!">More Links</a>
-        </div>
-    </div>
-</footer>
+    </section>
+  
 
-<script type="text/javascript" src="js/healthcloud_sdk.js"></script>
-<script type="text/javascript" src="js/materialize.min.js"></script>
-<script type="text/javascript" src="js/client.js"></script>
-</body>
-</html>
+
+
+
+<script type="text/javascript" src="../runtime.746d40095bd26b3f5ff2.js"></script><script type="text/javascript" src="../polyfills.b31df4847ebb8f109782.js"></script><script type="text/javascript" src="../scripts.e8256d3b5c39d7b71aaa.js"></script><script type="text/javascript" src="../main.2fa83649a4423012f3a6.js"></script></body></html><!--- Theming Note:
+Finally, if your app's content is not placed inside of a mat-sidenav-container element, you need to add the mat-app-background class to your wrapper element (for example the body).
+So if you're not using the mat-sidenav-container component, you need to add the Angular Material 2 background class to your HTML body like:
+-
+<body class="mat-app-background">
+-->

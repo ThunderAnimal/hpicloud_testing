@@ -8,8 +8,6 @@ const logger = require('morgan');
 const passport = require('passport');
 const config = require("config");
 
-const SQLiteStore = require('connect-sqlite3')(session);
-
 const dictManager = require('./app/modules/dict-manager');
 
 const app = express();
@@ -19,11 +17,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 //Session Database Setup
-const sessionStore = new SQLiteStore({
-    table: "sessions",
-    db: "sessionsDB",
-    dir: './data'
-});
+const sessionStore = require('./app/modules/session-store');
 
 // Middelware Setup
 app.use(logger('dev'));
@@ -35,6 +29,8 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname + '/dist_angular'));
+
 app.use(session({
     privateKey: "",
     secret: config.server.secret,
@@ -46,7 +42,6 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 
-
 // oAuth Setup
 require('./app/modules/passport-strategy')(passport);
 
@@ -56,6 +51,17 @@ dictManager.init()
     .then(() =>{
         console.log("Finished loading all Dicts: " + (Date.now() - timeLoadDicts) + " ms");
     });
+
+
+// Add headers
+app.use(function (req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', config.client.webAppUrl);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    next();
+});
 
 
 //Routes

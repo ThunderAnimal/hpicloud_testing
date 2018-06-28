@@ -1,4 +1,7 @@
 module.exports = {
+    client: {
+        webAppUrl:  process.env.WEB_APP_URL
+    },
     server:{
         adresse: process.env.ADRESSE ,
         port: process.env.PORT,

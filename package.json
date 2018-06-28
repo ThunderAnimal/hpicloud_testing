@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "install:ngnix": "docker pull nginx",
+    "start:nginx": "docker run --name docker-nginx -d -v W:\\hc-testing\\nginx.dev.conf:/etc/nginx/nginx.conf:ro -d nginx nginx-debug -g 'daemon off;'"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
