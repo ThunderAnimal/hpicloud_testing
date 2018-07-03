@@ -139,11 +139,19 @@ function uploadData() {
     });
 
     console.log("Document: ", document);
+
     GC.SDK.uploadDocument(userId, document)
-        .then((response) => console.log("Result Document: ", response));
-
-
+        .then((response) => {
+            console.log("Result Document: ", response);
+            const r = new FileReader();
+            r.onloadend = function () {
+                console.log("File Information: ", JSON.parse(r.result));
+            };
+            r.readAsText(response.attachments[0].file);
+        });
 }
+
+
 
 function createDummyFile() {
     const data = {SA_Text: "Hello World", PHQ_9: 5};
