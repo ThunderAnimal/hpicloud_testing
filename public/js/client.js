@@ -14,10 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnUploadData").addEventListener("click", uploadData);
 });
 
-function httpGetAsync(theUrl, callback)
-{
+function httpGetAsync(theUrl, callback) {
     const xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() {
+    xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState === 4)
             callback(xmlHttp.response);
     };
@@ -25,10 +24,9 @@ function httpGetAsync(theUrl, callback)
     xmlHttp.send(null);
 }
 
-function httpPostAsync(theUrl,data, callback)
-{
+function httpPostAsync(theUrl, data, callback) {
     const xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() {
+    xmlHttp.onreadystatechange = function () {
         if (xmlHttp.readyState === 4)
             callback(xmlHttp.status);
     };
@@ -77,7 +75,7 @@ function login() {
 
 function logout() {
     GC.SDK.reset();
-    httpGetAsync('/auth/logout', () =>{
+    httpGetAsync('/auth/logout', () => {
         init();
     });
 }
@@ -91,7 +89,33 @@ function loadData() {
 
     GC.SDK.getDocuments(userId, {}).then((data) => {
         console.log(data);
+        renderData(data.records)
     })
+}
+
+function renderData(data) {
+    const temp = document.getElementById('tempListData');
+    const ul = document.getElementById('listData');
+
+    while (ul.firstChild) {
+        ul.removeChild(ul.firstChild);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+        const clonedTemplate = temp.content.cloneNode(true);
+        clonedTemplate.querySelector('a').setAttribute('data-id', data[i].id);
+        clonedTemplate.querySelector('.title').innerText = data[i].title;
+        clonedTemplate.querySelector('.text').innerText = data[i].creationDate;
+        clonedTemplate.querySelector('a').addEventListener("click", function () {
+            const userId = GC.SDK.getCurrentUserId();
+            const documentId = this.getAttribute('data-id');
+            GC.SDK.downloadDocument(userId, documentId)
+                .then((document) => {
+                    console.log(document);
+                });
+        });
+        ul.appendChild(clonedTemplate);
+    }
 }
 
 function uploadData() {
@@ -144,9 +168,9 @@ function showKeys(publicKey, privateKey) {
     document.getElementById("privateKey").textContent = privateKey;
 }
 
-function drawLoginState(){
+function drawLoginState() {
     const userId = GC.SDK.getCurrentUserId();
-    if(userId){
+    if (userId) {
         document.getElementById("login").style.display = 'none';
         document.getElementById("logout").style.display = 'block';
         document.getElementById("userId").textContent = userId;
