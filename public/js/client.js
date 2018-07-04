@@ -1,6 +1,10 @@
 window.clientURL = 'http://localhost:3000/auth';
 window.clientId = 'tmcc-aid-local';
 
+window.userIdScience = '60ab5be4-ec26-4ee5-ba54-f261b6659134'; //ma.weber@student.htw-berlin.de
+window.appIdScience = 'd6d5747e-c59e-4435-b7bd-b4c30b824d10';
+window.userTherapeuth = '85fc9899-35ef-4e64-b040-4b8171058506'; //martinweber.9393@gmx.de
+
 const dummyFile = createDummyFile();
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -12,6 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnLogout").addEventListener("click", logout);
     document.getElementById("btnLoadData").addEventListener("click", loadData);
     document.getElementById("btnUploadData").addEventListener("click", uploadData);
+    document.getElementById("btnGrantPersmission").addEventListener("click", grantPermissionScience);
+
 });
 
 function httpGetAsync(theUrl, callback) {
@@ -106,12 +112,18 @@ function renderData(data) {
         clonedTemplate.querySelector('a').setAttribute('data-id', data[i].id);
         clonedTemplate.querySelector('.title').innerText = data[i].title;
         clonedTemplate.querySelector('.text').innerText = data[i].creationDate;
-        clonedTemplate.querySelector('a').addEventListener("click", function () {
+        clonedTemplate.querySelector('a.detail').addEventListener("click", function () {
             const userId = GC.SDK.getCurrentUserId();
             const documentId = this.getAttribute('data-id');
             GC.SDK.downloadDocument(userId, documentId)
                 .then((document) => {
-                    console.log(document);
+                    console.log(document.attachments[0]);
+                    const r = new FileReader();
+                    r.onloadend = function () {
+                        console.log("File Information: ", JSON.parse(r.result));
+                        alert(r.result);
+                    };
+                    r.readAsText(document.attachments[0].file);
                 });
         });
         ul.appendChild(clonedTemplate);
@@ -148,6 +160,13 @@ function uploadData() {
                 console.log("File Information: ", JSON.parse(r.result));
             };
             r.readAsText(response.attachments[0].file);
+        });
+}
+
+function grantPermissionScience(){
+    GC.SDK.grantPermission(window.appIdScience)
+        .then(() => {
+
         });
 }
 
