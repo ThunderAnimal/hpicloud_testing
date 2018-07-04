@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const config = require("config");
+
+const path = require('path');
+const appRoot = require('app-root-path');
+
 
 const socketManager = require('../app/modules/socket-manager');
 
@@ -44,8 +47,8 @@ router.post('/gckeys', function (req, res) {
 router.get('/gclogin', function (req, res, next) {
     const session = req.session;
 
-    if (req.query.websocketid) {
-        session.websocket = req.query.websocketid;
+    if (req.query.websocket_id) {
+        session.websocket = req.query.websocket_id;
     }
     passport.authenticate('oauth2', {
         scope: ["exc", "perm:r", "rec:r", "rec:w", "attachment:r", "attachment:w", "user:r", "user:q"],
@@ -92,10 +95,10 @@ router.get('/logout', function (req, res) {
 });
 
 router.get("/success", function (req, res) {
-    res.sendFile(path.join(__dirname + '/../views/login_success.html'));
+    res.sendFile(path.join(appRoot.path, 'views/login_success.html'));
 });
 router.get("/error", function (req, res) {
-    res.sendFile(path.join(__dirname + '/../views/login_error.html'));
+    res.sendFile(path.join(appRoot.path, 'views/login_error.html'));
 });
 
 module.exports = router;
