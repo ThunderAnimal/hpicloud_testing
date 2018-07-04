@@ -8,7 +8,6 @@
     "start:mac": "export PATH=$PATH:/Users/insanemac/Desktop/tree-tagger/bin/ && node ./bin/www",
     "install:ngnix": "docker pull nginx",
     "start:nginx": "docker run --name docker-nginx -d -v W:\\hc-testing\\nginx.dev.conf:/etc/nginx/nginx.conf:ro -d nginx nginx-debug -g 'daemon off;'"
-
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
@@ -27,6 +26,7 @@
     "morgan": "~1.9.0",
     "passport": "^0.4.0",
     "passport-oauth2": "^1.4.0",
+    "socket.io": "^2.1.1",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {}

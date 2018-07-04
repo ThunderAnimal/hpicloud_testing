@@ -1,6 +1,6 @@
 module.exports = {
     client: {
-        webAppUrl: "/client"
+        webAppUrl: "http://localhost:4200"
     },
     server:{
         adresse: "http://localhost",
