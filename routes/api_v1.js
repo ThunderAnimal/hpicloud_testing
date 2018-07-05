@@ -1,17 +1,36 @@
 const express = require('express');
-const router = express.Router();
+const tagHelper = require('../app/modules/tag-helper');
+const analyzerEmotion = require('../app/modules/emotion-analyzer');
 
-const dictManager = require('../app/modules/dict-manager');
-const treeTager = require("../app/modules/tree-tagger");
+module.exports = function(dictManager){
+    const router = express.Router();
 
+    const treeTager = require("../app/modules/tree-tagger");
+    const emotionTagger = require("../app/modules/emotion-tagger")(dictManager);
 
-router.get('/tag', function (req, res, next) {
-    const text = req.query.text;
-    treeTager.tagText(text, (result) =>{
-        res.send(result);
+    router.get('/tag', function (req, res, next) {
+        const text = req.query.text;
 
-        //TODO check in Dicta
-    })
-});
+        const timeStartTag = Date.now();
+        treeTager.tagText(text, (treeTaggerResult) =>{
+            const timeEndTag = Date.now() - timeStartTag;
 
-module.exports = router;
+            const filterListForEmotion = tagHelper.filterListForEmotionalAnalyse(treeTaggerResult);
+            const timeStartTagEmotion = Date.now();
+            emotionTagger.tagAll(filterListForEmotion)
+                .then((emotionTaggerResult) => {
+                    const timeEndTagEmotion = Date.now() - timeStartTagEmotion;
+                    const analyzeResult = analyzerEmotion.analyseTaggedText(emotionTaggerResult, tagHelper.countWords(treeTaggerResult));
+                    res.send({
+                        tagged: treeTaggerResult,
+                        result: analyzeResult
+                    });
+                });
+
+            //TODO check in Dicta
+
+        });
+    });
+
+    return router;
+};

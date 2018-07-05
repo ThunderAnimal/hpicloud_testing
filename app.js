@@ -67,7 +67,7 @@ app.use(function (req, res, next) {
 //Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
-app.use('/api/v1', require('./routes/api_v1'));
+app.use('/api/v1', require('./routes/api_v1')(dictManager));
 
 
 // catch 404 and forward to error handler
