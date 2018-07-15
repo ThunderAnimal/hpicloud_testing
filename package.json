@@ -5,9 +5,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "prepare:windows": "npm install --global --production windows-build-tools",
-    "start:mac": "export PATH=$PATH:/Users/insanemac/Desktop/tree-tagger/bin/ && node ./bin/www",
-    "install:ngnix": "docker pull nginx",
-    "start:nginx": "docker run --name docker-nginx -d -v W:\\hc-testing\\nginx.dev.conf:/etc/nginx/nginx.conf:ro -d nginx nginx-debug -g 'daemon off;'"
+    "start:mac": "export PATH=$PATH:/Users/insanemac/Desktop/tree-tagger/bin/ && node ./bin/www"
   },
   "dependencies": {
     "app-root-path": "^2.0.1",
