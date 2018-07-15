@@ -120,9 +120,16 @@ function renderData(data) {
         clonedTemplate.querySelector('a.detail').addEventListener("click", function () {
             const userId = GC.SDK.getCurrentUserId();
             const documentId = this.parentNode.getAttribute('data-id');
+
+            console.log("DOWNLOAD DOCUMENT");
+            console.log("==========");
+
+            const timeStart = Date.now();
             GC.SDK.downloadDocument(userId, documentId)
                 .then((document) => {
-                    console.log(document.attachments[0]);
+                    console.log("Finished Download Document:", (Date.now() - timeStart) + " ms");
+                    console.log(document);
+
                     const r = new FileReader();
                     r.onloadend = function () {
                         console.log("File Information: ", JSON.parse(r.result));
@@ -146,6 +153,48 @@ function renderData(data) {
                     that.parentNode.style.display = "none";
                 });
         });
+        clonedTemplate.querySelector('a.update').addEventListener("click", function () {
+            const userId = GC.SDK.getCurrentUserId();
+            const documentId = this.parentNode.getAttribute('data-id');
+            GC.SDK.downloadDocument(userId, documentId)
+                .then((document) => {
+                    const r = new FileReader();
+                    r.onloadend = function () {
+                        const dataAttachment = JSON.parse(r.result);
+
+                        const newTitle = window.prompt('SA Title', document.title);
+                        const newDescription = window.prompt('SA Description', dataAttachment.erhebungsphase.beschreibung);
+
+                        dataAttachment.erhebungsphase.beschreibung = newDescription;
+
+                        const json = JSON.stringify(dataAttachment);
+                        const blob = new Blob([json], {type: "application/json"});
+                        const file = new File([blob], "SA.json", {type: "text/json;charset=utf-8", lastModified: Date.now()});
+
+                        document.title = newTitle;
+
+                        const attachment = new GC.SDK.models.HCAttachment({file});
+                        document.attachments = [attachment];
+
+                        console.log("UPDATE DATA");
+                        console.log("==========");
+
+                        console.log("Document: ", document);
+
+                        GC.SDK.updateDocument(userId, document)
+                            .then((response) => {
+                                console.log("Result Document: ", response);
+                                const r = new FileReader();
+                                r.onloadend = function () {
+                                    console.log("File Information: ", JSON.parse(r.result));
+                                };
+                                r.readAsText(response.attachments[0].file);
+                            });
+
+                    };
+                    r.readAsText(document.attachments[0].file);
+                });
+        });
         ul.appendChild(clonedTemplate);
     }
 }
@@ -159,8 +208,6 @@ function uploadData() {
 
     console.log("UPLAOD DATA");
     console.log("==========");
-
-    console.log(dummyFile instanceof File);
 
     const files = [dummyFile];
 
