@@ -173,7 +173,38 @@ function grantPermissionScience(){
 
 
 function createDummyFile() {
-    const data = {SA_Text: "Hello World", PHQ_9: 5};
+    const data = {
+        erhebungsphase:{
+            beschreibung: "Ich bin mit einer Freundin ausgegangen, habe " +
+            "sie heimgebracht und sagte ihr an der Tür gute " +
+            "Nacht.",
+            interpretation:[
+                "Mir gelingt nichts.",
+                "Sie hätte mich sicher nicht hineingelassen."
+            ],
+            verhalten: "Ich unterhielt mich mit ihr, sagte ihr gute Nacht und ging.",
+            kiesler_kreis: "",
+            ergebnis_real: "Ich verabschiedete mich und ging.",
+            ergebnis_wunsch: "Ich frage sie, ob ich hineinkommen darf.",
+            ziel_erreicht: false,
+            ziel_nicht_erreicht_grund: "Ich habe mich nicht getraut zu fragen."
+        },
+        loesungsphase:{
+            revision: [
+                "Wenn ich sie nicht frage, weiß sie vielleicht nicht, dass " +
+                "ich mit hineinkommen will.",
+                "Ich will sie fragen, ob ich mit hinein darf."
+            ],
+            schlachtrufe: [],
+            zielfuehrendes_verhalten: "Ich würde sagen: »Darf ich noch kurz mit hinein kommen?«",
+            take_home_message: [
+                "Ich sollte meine Wünsche aussprechen, riskiere dabei aber einen Korb."
+            ],
+            transfer: [
+                "Ich werde meinem Freund morgen sagen, welchen Film ich im Kino am liebsten mit ihm sehen würde."
+            ]
+        }
+    };
     const json = JSON.stringify(data);
     const blob = new Blob([json], {type: "application/json"});
     const file = new File([blob], "SA.json", {type: "text/json;charset=utf-8", lastModified: Date.now()});
