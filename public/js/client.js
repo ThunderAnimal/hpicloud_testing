@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnLogout").addEventListener("click", logout);
     document.getElementById("btnLoadData").addEventListener("click", loadData);
     document.getElementById("btnUploadData").addEventListener("click", uploadData);
+    document.getElementById("btnInit100Records").addEventListener("click", init100Records);
     document.getElementById("btnGrantPersmission").addEventListener("click", grantPermissionScience);
-
 });
 
 function httpGetAsync(theUrl, callback) {
@@ -96,7 +96,7 @@ function loadData() {
     console.log("==========");
 
     const timeStart = Date.now();
-    GC.SDK.getDocuments(userId, {}).then((data) => {
+    GC.SDK.getDocuments(userId, {limit: 100}).then((data) => {
         console.log("Finished Load Documents:", (Date.now() - timeStart) + " ms");
         console.log(data);
         window.loadedData = data;
@@ -200,7 +200,29 @@ function renderData(data) {
 }
 
 function init100Records() {
+    const userId = GC.SDK.getCurrentUserId();
 
+    console.log("UPLAOD 100 Records");
+    console.log("==========");
+
+    const files = [dummyFile];
+    let uploadedDocuments = 0;
+
+    for(let i = 1; i <= 100; i++){
+        const document = new GC.SDK.models.HCDocument({
+            files,
+            title: "SA Title - " + i,
+            author: new GC.SDK.models.HCAuthor({firstName: "Max", lastName: "Mustermann"}),
+            type: "application/json",
+            creationDate: new Date(),
+            annotations: ["Situationsanalyse"] //fuer spätere Filterung
+        });
+        GC.SDK.uploadDocument(userId, document)
+            .then((response) => {
+                uploadedDocuments++;
+                console.log("Document uploaded: ", uploadedDocuments);
+            });
+    }
 }
 
 function uploadData() {
@@ -211,7 +233,6 @@ function uploadData() {
 
     const files = [dummyFile];
 
-    //TODO ist die Struktur so korrek, in der DOUK gibt es unterschiedliche Angaben
     const document = new GC.SDK.models.HCDocument({
         files,
         title: "Title der SA",
