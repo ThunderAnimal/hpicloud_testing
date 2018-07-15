@@ -5,6 +5,8 @@ window.userIdScience = '60ab5be4-ec26-4ee5-ba54-f261b6659134'; //ma.weber@studen
 window.appIdScience = 'd6d5747e-c59e-4435-b7bd-b4c30b824d10';
 window.userTherapeuth = '85fc9899-35ef-4e64-b040-4b8171058506'; //martinweber.9393@gmx.de
 
+window.loadedData = undefined; //for test array size after load
+
 const dummyFile = createDummyFile();
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -93,8 +95,11 @@ function loadData() {
     console.log("LOAD DATA");
     console.log("==========");
 
+    const timeStart = Date.now();
     GC.SDK.getDocuments(userId, {}).then((data) => {
+        console.log("Finished Load Documents:", (Date.now() - timeStart) + " ms");
         console.log(data);
+        window.loadedData = data;
         renderData(data.records)
     })
 }
@@ -109,12 +114,12 @@ function renderData(data) {
 
     for (let i = 0; i < data.length; i++) {
         const clonedTemplate = temp.content.cloneNode(true);
-        clonedTemplate.querySelector('a').setAttribute('data-id', data[i].id);
+        clonedTemplate.querySelector('li').setAttribute('data-id', data[i].id);
         clonedTemplate.querySelector('.title').innerText = data[i].title;
         clonedTemplate.querySelector('.text').innerText = data[i].creationDate;
         clonedTemplate.querySelector('a.detail').addEventListener("click", function () {
             const userId = GC.SDK.getCurrentUserId();
-            const documentId = this.getAttribute('data-id');
+            const documentId = this.parentNode.getAttribute('data-id');
             GC.SDK.downloadDocument(userId, documentId)
                 .then((document) => {
                     console.log(document.attachments[0]);
@@ -126,8 +131,27 @@ function renderData(data) {
                     r.readAsText(document.attachments[0].file);
                 });
         });
+        clonedTemplate.querySelector('a.delete').addEventListener("click", function () {
+            const that = this;
+            const userId = GC.SDK.getCurrentUserId();
+            const documentId = this.parentNode.getAttribute('data-id');
+
+
+            console.log("DELETE DATA");
+            console.log("==========");
+            console.log("Document:", documentId);
+
+            GC.SDK.deleteDocument(userId, documentId)
+                .then(() => {
+                    that.parentNode.style.display = "none";
+                });
+        });
         ul.appendChild(clonedTemplate);
     }
+}
+
+function init100Records() {
+
 }
 
 function uploadData() {
@@ -143,7 +167,7 @@ function uploadData() {
     //TODO ist die Struktur so korrek, in der DOUK gibt es unterschiedliche Angaben
     const document = new GC.SDK.models.HCDocument({
         files,
-        title: "SA Test",
+        title: "Title der SA",
         author: new GC.SDK.models.HCAuthor({firstName: "Max", lastName: "Mustermann"}),
         type: "application/json",
         creationDate: new Date(),
@@ -163,7 +187,7 @@ function uploadData() {
         });
 }
 
-function grantPermissionScience(){
+function grantPermissionScience() {
     GC.SDK.grantPermission(window.appIdScience)
         .then(() => {
 
@@ -171,14 +195,13 @@ function grantPermissionScience(){
 }
 
 
-
 function createDummyFile() {
     const data = {
-        erhebungsphase:{
+        erhebungsphase: {
             beschreibung: "Ich bin mit einer Freundin ausgegangen, habe " +
             "sie heimgebracht und sagte ihr an der Tür gute " +
             "Nacht.",
-            interpretation:[
+            interpretation: [
                 "Mir gelingt nichts.",
                 "Sie hätte mich sicher nicht hineingelassen."
             ],
@@ -189,7 +212,7 @@ function createDummyFile() {
             ziel_erreicht: false,
             ziel_nicht_erreicht_grund: "Ich habe mich nicht getraut zu fragen."
         },
-        loesungsphase:{
+        loesungsphase: {
             revision: [
                 "Wenn ich sie nicht frage, weiß sie vielleicht nicht, dass " +
                 "ich mit hineinkommen will.",
