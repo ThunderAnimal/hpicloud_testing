@@ -8,6 +8,24 @@ A simple and small WebServer - in NodeJS - which provide these functionality:
 * API to tag german Text after _TreeTagger_ and add german sense for each word
 * API to tag a hole situational analysis - according to cbasp - and give feedback to improve the quality
 
+---
+
+__Table of Content:__
+* [Requirements](#requirements)
+* [Installation](#installation)
+    * [NodeJS](#nodejs)
+    * [Pyhton](#python)
+    * [TreeTagger](#treetagger)
+* [Run Server](#run-server)
+* [HTTP-Endpoints](#http-endpoints)
+    * [Objects](#objects)
+    * [Routes](#routes)
+* [WebSocket Connections](#websocket-connections)
+    * [Broadcast Channels](#broadcast-channels)
+    * [Listen Channels](#listen-channels)
+    
+---
+
 ## Requirements
 * OS: Windows, MacOSX, Linux
 * NodeJs >= 8.10.0
