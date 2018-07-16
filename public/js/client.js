@@ -51,33 +51,9 @@ function init() {
     GC.AUTH.loggedIn.then((isLoggedIn) => {
         drawLoginState();
     });
-
-    // httpGetAsync('auth/token', (data) =>{
-    //     if(data.Token){
-    //         GC.SDK.setup(clientId, data.PrivateKey, () => {
-    //             return new Promise(function (resolve) {
-    //                 resolve(data.Token);
-    //             })
-    //         }).then(() =>{
-    //             drawLoginState();
-    //         });
-    //     } else {
-    //         drawLoginState();
-    //     }
-    // });
 }
 
 function login() {
-    // GC.SDK.createCAP().then((keys) => {
-    //     showKeys(keys.publicKey, keys.privateKey);
-    //     httpPostAsync('auth/keys', {
-    //         public_key: keys.publicKey,
-    //         private_key: keys.privateKey
-    //     }, () => {});
-    //
-    //     window.location.href = clientURL + '/gclogin?public_key=' + keys.publicKey;
-    // });
-
     GC.AUTH.login();
 }
 
@@ -313,8 +289,8 @@ function createDummyFile() {
 
 
 function showKeys(publicKey, privateKey) {
-    document.getElementById("publicKey").textContent = publicKey;
-    document.getElementById("privateKey").textContent = privateKey;
+    // document.getElementById("publicKey").textContent = publicKey;
+    // document.getElementById("privateKey").textContent = privateKey;
 }
 
 function drawLoginState() {
