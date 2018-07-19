@@ -9,10 +9,11 @@ window.loadedData = undefined; //for test array size after load
 
 const dummyFile = createDummyFile();
 
+let crypt = undefined;
+let cryptServer = undefined;
+
 document.addEventListener("DOMContentLoaded", function () {
     init();
-
-    showKeys("", "");
 
     document.getElementById("btnLogin").addEventListener("click", login);
     document.getElementById("btnLogout").addEventListener("click", logout);
@@ -20,6 +21,10 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnUploadData").addEventListener("click", uploadData);
     document.getElementById("btnInit100Records").addEventListener("click", init100Records);
     document.getElementById("btnGrantPersmission").addEventListener("click", grantPermissionScience);
+    document.getElementById("btnGetKeyServer").addEventListener("click", loadPublicKeyFromServer);
+    document.getElementById("btnTestSecureConnection").addEventListener("click", testKeyChange);
+
+
 });
 
 function httpGetAsync(theUrl, callback) {
@@ -35,10 +40,12 @@ function httpGetAsync(theUrl, callback) {
 function httpPostAsync(theUrl, data, callback) {
     const xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function () {
-        if (xmlHttp.readyState === 4)
-            callback(xmlHttp.status);
+        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+            callback(this.response);
+        }
     };
     xmlHttp.open("POST", theUrl, true); // true for asynchronous
+    xmlHttp.setRequestHeader("Content-Type", "application/json");
     xmlHttp.send(JSON.stringify(data));
 }
 
@@ -51,6 +58,24 @@ function init() {
     GC.AUTH.loggedIn.then((isLoggedIn) => {
         drawLoginState();
     });
+
+    cryptServer = new JSEncrypt();
+    showKeysServer("");
+
+
+    // httpGetAsync('auth/token', (data) =>{
+    //     if(data.Token){
+    //         GC.SDK.setup(clientId, data.PrivateKey, () => {
+    //             return new Promise(function (resolve) {
+    //                 resolve(data.Token);
+    //             })
+    //         }).then(() =>{
+    //             drawLoginState();
+    //         });
+    //     } else {
+    //         drawLoginState();
+    //     }
+    // });
 }
 
 function login() {
@@ -145,7 +170,10 @@ function renderData(data) {
 
                         const json = JSON.stringify(dataAttachment);
                         const blob = new Blob([json], {type: "application/json"});
-                        const file = new File([blob], "SA.json", {type: "text/json;charset=utf-8", lastModified: Date.now()});
+                        const file = new File([blob], "SA.json", {
+                            type: "text/json;charset=utf-8",
+                            lastModified: Date.now()
+                        });
 
                         document.title = newTitle;
 
@@ -184,7 +212,7 @@ function init100Records() {
     const files = [dummyFile];
     let uploadedDocuments = 0;
 
-    for(let i = 1; i <= 100; i++){
+    for (let i = 1; i <= 100; i++) {
         const document = new GC.SDK.models.HCDocument({
             files,
             title: "SA Title - " + i,
@@ -287,10 +315,8 @@ function createDummyFile() {
     return file;
 }
 
-
-function showKeys(publicKey, privateKey) {
-    // document.getElementById("publicKey").textContent = publicKey;
-    // document.getElementById("privateKey").textContent = privateKey;
+function showKeysServer(publicKey) {
+    document.getElementById("publicKeyServer").textContent = publicKey;
 }
 
 function drawLoginState() {
@@ -304,4 +330,62 @@ function drawLoginState() {
         document.getElementById("login").style.display = 'block';
         document.getElementById("logout").style.display = 'none';
     }
+}
+
+function loadPublicKeyFromServer() {
+    httpGetAsync('api/v1/key', (data) => {
+        const respone = JSON.parse(data);
+        cryptServer.setPublicKey(respone.publicKey);
+        showKeysServer(cryptServer.getPublicKey());
+    });
+}
+
+function testKeyChange() {
+    console.log("TEST SECURE CONNECTION");
+    console.log("==========");
+
+    const startTime = Date.now();
+
+    const data = {"erhebungsphase":{"beschreibung":"Ich bin mit einer Freundin ausgegangen, habe sie heimgebracht und sagte ihr an der Tür gute Nacht.","interpretation":["Mir gelingt nichts.","Sie hätte mich sicher nicht hineingelassen."],"verhalten":"Ich unterhielt mich mit ihr, sagte ihr gute Nacht und ging.","kiesler_kreis":"","ergebnis_real":"Ich verabschiedete mich und ging.","ergebnis_wunsch":"Ich frage sie, ob ich hineinkommen darf.","ziel_erreicht":false,"ziel_nicht_erreicht_grund":"Ich habe mich nicht getraut zu fragen."},"loesungsphase":{"revision":["Wenn ich sie nicht frage, weiß sie vielleicht nicht, dass ich mit hineinkommen will.","Ich will sie fragen, ob ich mit hinein darf."],"schlachtrufe":[],"zielfuehrendes_verhalten":"Ich würde sagen: »Darf ich noch kurz mit hinein kommen?«","take_home_message":["Ich sollte meine Wünsche aussprechen, riskiere dabei aber einen Korb."],"transfer":["Ich werde meinem Freund morgen sagen, welchen Film ich im Kino am liebsten mit ihm sehen würde."]}};
+    const key = generateRadomKey(10);
+
+    console.log("Data: ", data);
+    console.log("Key: ", key);
+
+
+    const key_encrypted = cryptServer.encrypt(key);
+    const data_encrypted = (CryptoJS.AES.encrypt(JSON.stringify(data), key)).toString();
+
+    const body = {
+        data: data_encrypted,
+        key: key_encrypted,
+    };
+
+    console.log("Data to Server: ", body);
+
+    httpPostAsync('api/v1/check_secure_connection', body, (data) => {
+        const response = JSON.parse(data);
+        const data_decrypted = JSON.parse(CryptoJS.AES.decrypt(response.data, key).toString(CryptoJS.enc.Utf8));
+        const endTime = Date.now() - startTime;
+
+        console.log("Response Server: ", response);
+        console.log("Data encypted: ", data_decrypted);
+        console.log("Time: ", endTime + "ms");
+    });
+}
+
+/**
+ *
+ * @param length
+ * @returns {string}
+ */
+function generateRadomKey(length) {
+    let key = "";
+    const list = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for(let i = 0; i < length; i++){
+        key += list.charAt(Math.floor(Math.random() * list.length));
+    }
+
+    return key;
 }

@@ -9,6 +9,7 @@ const passport = require('passport');
 const config = require("config");
 
 const dictManager = require('./app/modules/dict-manager');
+const cryptoManager = require('./app/modules/crypto-manager');
 
 const app = express();
 
@@ -52,6 +53,12 @@ dictManager.init()
         console.log("Finished loading all Dicts: " + (Date.now() - timeLoadDicts) + " ms");
     });
 
+//Setup Crypto Manager
+setTimeout(function () {
+    cryptoManager.generateKeys();
+    console.log("Init Keys, Public Key:\n" ,cryptoManager.getPublicKey());
+}, 300);
+
 
 // Add headers
 app.use(function (req, res, next) {
@@ -67,7 +74,7 @@ app.use(function (req, res, next) {
 //Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
-app.use('/api/v1', require('./routes/api_v1')(dictManager));
+app.use('/api/v1', require('./routes/api_v1')(dictManager, cryptoManager));
 
 
 // catch 404 and forward to error handler
