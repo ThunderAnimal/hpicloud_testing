@@ -7,6 +7,7 @@ module.exports = function(dictManager, cryptoManager){
 
     const treeTager = require("../app/modules/tree-tagger");
     const emotionTagger = require("../app/modules/emotion-tagger")(dictManager);
+    const SAAnalyzer = require("../app/modules/sa-analyzer")(dictManager);
 
     router.get('/tag', function (req, res, next) {
         const text = req.query.text;
@@ -41,6 +42,35 @@ module.exports = function(dictManager, cryptoManager){
         const data_back = cryptoManager.encrypAES(JSON.stringify(data), key).toString();
 
         res.status(200).send({data: data_back});
+    });
+
+    router.post('/sa_analyze', function (req, res) {
+        const sa_encrypted = req.body.sa;
+        const key_encrypted = req.body.key;
+
+        const key = cryptoManager.decryptRSA(key_encrypted);
+        const sa = JSON.parse(cryptoManager.decryptAES(sa_encrypted, key));
+
+        SAAnalyzer.invoke(sa)
+            .then((data) => {
+                const sa_back = cryptoManager.encrypAES(JSON.stringify(data), key).toString();
+                res.status(200).send({data: sa_back});
+            })
+            .catch((error) => {
+                res.status(500).send(error);
+            })
+    });
+
+    router.post('/sa_analyze_plain', function (req, res) {
+        const sa = req.body.sa;
+
+        SAAnalyzer.invoke(sa)
+            .then((data) => {
+                res.status(200).send(data);
+            })
+            .catch((error) => {
+                res.status(500).send(error);
+            });
     });
 
     return router;

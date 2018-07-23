@@ -84,10 +84,43 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+var envConfig = exports.envConfig = {
+    development: {
+        api: 'https://api-dev.hpsgc.de'
+    },
+    staging: {
+        api: 'https://staging.hpihc.de'
+    },
+    production: {
+        api: 'https://api.gesundheitscloud.de'
+    }
+};
+
+var config = {
+    // TODO: need to change to internal url once deployed.
+    fhirSchemaUrl: 'https://raw.githubusercontent.com/harsimran1/fhir-validator-js' + '/master/lib/conformance/3.0.1/schema.json',
+    environmentConfig: {},
+    apiUrl: function apiUrl() {
+        return this.environmentConfig.api;
+    }
+};
+
+exports.default = config;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _config = __webpack_require__(2);
+var _config = __webpack_require__(0);
 
 var _config2 = _interopRequireDefault(_config);
 
@@ -104,11 +137,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var maxRetries = 2;
 
 var isHealthCloudPath = function isHealthCloudPath(path) {
-    return path.startsWith(_config2.default.api);
+    return path.startsWith(_config2.default.environmentConfig.api);
 };
 
 var isExpired = function isExpired(error) {
-    return error.status === 401 && error.body && error.body.error && error.body.error.includes('expired');
+    return error.status === 401;
 };
 
 var hcRequest = {
@@ -206,9 +239,7 @@ var hcRequest = {
                         refreshPromise = _this2.getAccessToken(ownerId);
                     } else {
                         // request accessToken for the logged in user's accessToken and set it
-                        refreshPromise = _this2.requestAccessToken().then(function (token) {
-                            return _this2.setMasterAccessToken(token);
-                        });
+                        refreshPromise = _this2.requestAccessToken().then(_this2.setMasterAccessToken.bind(_this2)).then(_this2.getAccessToken.bind(_this2));
                     }
 
                     return refreshPromise.then(function (token) {
@@ -226,7 +257,7 @@ var hcRequest = {
 exports.default = hcRequest;
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -466,24 +497,6 @@ function unescapeJsonPointer(str) {
 }
 
 /***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var config = {
-    api: 'https://staging.hpihc.de',
-    // TODO: need to change to internal url once deployed.
-    fhirSchemaUrl: 'https://raw.githubusercontent.com/harsimran1/fhir-validator-js' + '/master/lib/conformance/3.0.1/schema.json'
-};
-
-exports.default = config;
-
-/***/ }),
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -520,7 +533,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
+var _base64Js = __webpack_require__(85);
+
+var _base64Js2 = _interopRequireDefault(_base64Js);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 var crypto = window.crypto || window.msCrypto;
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
 
 var keyTypes = {
     COMMON_KEY: 'ck',
@@ -560,37 +581,13 @@ var PBKDF2 = {
 
 var TEK_IV = new Uint8Array(16).fill(0);
 
-var convertStringToArrayBufferView = function convertStringToArrayBufferView(str) {
-    var bytes = new Uint8Array(str.length);
-
-    for (var i = 0; i < str.length; i += 1) {
-        bytes[i] = str.charCodeAt(i);
-    }
-
-    return bytes;
-};
-
-var convertBase64ToArrayBufferView = function convertBase64ToArrayBufferView(base64String) {
-    return convertStringToArrayBufferView(atob(base64String));
-};
+var convertStringToArrayBufferView = textEncoder.encode.bind(textEncoder);
 
 var convertObjectToArrayBufferView = function convertObjectToArrayBufferView(object) {
     return convertStringToArrayBufferView(JSON.stringify(object));
 };
 
-var convertArrayBufferViewToString = function convertArrayBufferViewToString(arrayBufferView) {
-    var str = '';
-
-    for (var i = 0; i < arrayBufferView.byteLength; i += 1) {
-        str += String.fromCharCode(arrayBufferView[i]);
-    }
-
-    return str;
-};
-
-var convertArrayBufferViewToBase64 = function convertArrayBufferViewToBase64(arrayBufferView) {
-    return btoa(convertArrayBufferViewToString(arrayBufferView));
-};
+var convertArrayBufferViewToString = textDecoder.decode.bind(textDecoder);
 
 var convertBlobToArrayBufferView = function convertBlobToArrayBufferView(blob) {
     return new Promise(function (resolve) {
@@ -601,6 +598,24 @@ var convertBlobToArrayBufferView = function convertBlobToArrayBufferView(blob) {
         fileReader.readAsArrayBuffer(blob);
     });
 };
+
+/**
+ * converts a base64 string to a Uint8Array
+ *
+ * @param {String} base64
+ * @returns {Uint8Array} - the bytes of the base64 string
+ *
+ */
+var convertBase64ToArrayBufferView = _base64Js2.default.toByteArray;
+
+/**
+ * converts the bytes to a base64 string
+ *
+ * @param {Uint8Array} bytes
+ * @returns {String} - the base64 representation of the bytes
+ *
+ */
+var convertArrayBufferViewToBase64 = _base64Js2.default.fromByteArray;
 
 /**
  * Import from base64 encoded raw key to CryptoKey.
@@ -658,7 +673,6 @@ var exportPrivateKeyToPKCS8 = function exportPrivateKeyToPKCS8(cryptoKey) {
  */
 var importPublicKeyFromSPKI = function importPublicKeyFromSPKI(SPKI) {
     var alg = RSA_OAEP;
-
     return crypto.subtle.importKey('spki', convertBase64ToArrayBufferView(SPKI), alg, true, ['encrypt']);
 };
 
@@ -993,7 +1007,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.tagKeys = undefined;
 
-var _stringUtils = __webpack_require__(85);
+var _stringUtils = __webpack_require__(86);
 
 var _stringUtils2 = _interopRequireDefault(_stringUtils);
 
@@ -1020,8 +1034,10 @@ var taggingUtils = {
             return _this.buildTag(tagKey, tagObject[tagKey]);
         });
     },
-    generateCustomTags: function generateCustomTags(annotationList) {
+    generateCustomTags: function generateCustomTags() {
         var _this2 = this;
+
+        var annotationList = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
 
         return annotationList.map(function (el) {
             return _this2.buildTag(ANNOTATION_LABEL, el);
@@ -1065,7 +1081,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var url = __webpack_require__(46),
     equal = __webpack_require__(8),
-    util = __webpack_require__(1),
+    util = __webpack_require__(2),
     SchemaObject = __webpack_require__(18),
     traverse = __webpack_require__(54);
 
@@ -1424,7 +1440,7 @@ var _taggingUtils = __webpack_require__(6);
 
 var _taggingUtils2 = _interopRequireDefault(_taggingUtils);
 
-var _SetupError = __webpack_require__(86);
+var _SetupError = __webpack_require__(87);
 
 var _SetupError2 = _interopRequireDefault(_SetupError);
 
@@ -1645,34 +1661,32 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _config = __webpack_require__(2);
+var _config = __webpack_require__(0);
 
 var _config2 = _interopRequireDefault(_config);
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var apiUrl = _config2.default.api;
-
 var documentRoutes = {
-    getFileDownloadUrl: function getFileDownloadUrl(ownerId, recordId, fileId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + ownerId + '/documents/' + recordId + '/files/' + fileId + '/download_access_token', { authorize: true, ownerId: ownerId });
+    getFileDownloadURL: function getFileDownloadURL(ownerId, recordId, fileId) {
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + ownerId + '/documents/' + recordId + '/files/' + fileId + '/download_access_token', { authorize: true, ownerId: ownerId });
     },
-    getFileUploadUrls: function getFileUploadUrls(ownerId, recordId, fileNumber) {
+    getFileUploadURLs: function getFileUploadURLs(ownerId, recordId, fileNumber) {
         var body = { file_number: fileNumber };
-        return _hcRequest2.default.submit('POST', apiUrl + '/users/' + ownerId + '/documents/' + recordId + '/tokens', { body: body, authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('POST', _config2.default.apiUrl() + '/users/' + ownerId + '/documents/' + recordId + '/tokens', { body: body, authorize: true, ownerId: ownerId });
     },
     createRecord: function createRecord(ownerId, data) {
-        return _hcRequest2.default.submit('POST', apiUrl + '/users/' + ownerId + '/records', { body: data, authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('POST', _config2.default.apiUrl() + '/users/' + ownerId + '/records', { body: data, authorize: true, ownerId: ownerId });
     },
     updateRecord: function updateRecord(ownerId, recordId, data) {
-        return _hcRequest2.default.submit('PUT', apiUrl + '/users/' + ownerId + '/records/' + recordId, { body: data, authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('PUT', _config2.default.apiUrl() + '/users/' + ownerId + '/records/' + recordId, { body: data, authorize: true, ownerId: ownerId });
     },
     searchRecords: function searchRecords(ownerId, queryParams) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + ownerId + '/records', {
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + ownerId + '/records', {
             query: queryParams,
             authorize: true,
             includeResponseHeaders: true,
@@ -1684,7 +1698,7 @@ var documentRoutes = {
         });
     },
     getRecordsCount: function getRecordsCount(ownerId, queryParams) {
-        return _hcRequest2.default.submit('HEAD', apiUrl + '/users/' + ownerId + '/records', {
+        return _hcRequest2.default.submit('HEAD', _config2.default.apiUrl() + '/users/' + ownerId + '/records', {
             query: queryParams,
             authorize: true,
             includeResponseHeaders: true,
@@ -1695,13 +1709,13 @@ var documentRoutes = {
         });
     },
     downloadRecord: function downloadRecord(ownerId, recordId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + ownerId + '/records/' + recordId, { authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + ownerId + '/records/' + recordId, { authorize: true, ownerId: ownerId });
     },
     deleteRecord: function deleteRecord(ownerId, recordId) {
-        return _hcRequest2.default.submit('DELETE', apiUrl + '/users/' + ownerId + '/records/' + recordId, { authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('DELETE', _config2.default.apiUrl() + '/users/' + ownerId + '/records/' + recordId, { authorize: true, ownerId: ownerId });
     },
     fetchAttachmentKey: function fetchAttachmentKey(ownerId, recordId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + ownerId + '/records/' + recordId + '/attachment_key', { authorize: true, ownerId: ownerId });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + ownerId + '/records/' + recordId + '/attachment_key', { authorize: true, ownerId: ownerId });
     }
 };
 
@@ -2880,7 +2894,7 @@ var compileSchema = __webpack_require__(45),
     rules = __webpack_require__(57),
     $dataMetaSchema = __webpack_require__(76),
     patternGroups = __webpack_require__(77),
-    util = __webpack_require__(1),
+    util = __webpack_require__(2),
     co = __webpack_require__(21);
 
 module.exports = Ajv;
@@ -3360,7 +3374,7 @@ module.exports = __webpack_amd_options__;
 "use strict";
 
 
-var util = __webpack_require__(1);
+var util = __webpack_require__(2);
 
 module.exports = SchemaObject;
 
@@ -4593,44 +4607,30 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // createEncryptData :: encrypt<Data> => Promise(JWK) -> Data ->
 //      Promise([ String/ArrayBufferView, String ])
-var createEncryptData = function createEncryptData(encryptionMethod) {
-    return function (commonKeyPromise) {
-        return function (data, givenEncryptedDataKeyPromise) {
-            var dataKeyPromise = Promise.all([commonKeyPromise, givenEncryptedDataKeyPromise]).then(function (_ref) {
-                var _ref2 = _slicedToArray(_ref, 2),
-                    commonKey = _ref2[0],
-                    encryptedDataKey = _ref2[1];
+var createEncrypt = function createEncrypt(commonKeyPromise, encryptionMethod) {
+    return function (data, givenEncryptedDataKeyPromise) {
+        var dataKeyPromise = Promise.all([commonKeyPromise, givenEncryptedDataKeyPromise]).then(function (_ref) {
+            var _ref2 = _slicedToArray(_ref, 2),
+                commonKey = _ref2[0],
+                encryptedDataKey = _ref2[1];
 
-                if (encryptedDataKey) {
-                    return _crypto2.default.symDecryptObject(commonKey, encryptedDataKey);
-                }
-                return _crypto2.default.generateSymKey(_crypto2.default.keyTypes.DATA_KEY);
-            });
-            return Promise.all([commonKeyPromise, dataKeyPromise]).then(function (_ref3) {
-                var _ref4 = _slicedToArray(_ref3, 2),
-                    commonKey = _ref4[0],
-                    dataKey = _ref4[1];
+            if (encryptedDataKey) {
+                return _crypto2.default.symDecryptObject(commonKey, encryptedDataKey);
+            }
+            return _crypto2.default.generateSymKey(_crypto2.default.keyTypes.DATA_KEY);
+        });
+        return Promise.all([commonKeyPromise, dataKeyPromise]).then(function (_ref3) {
+            var _ref4 = _slicedToArray(_ref3, 2),
+                commonKey = _ref4[0],
+                dataKey = _ref4[1];
 
-                var encryptedDataKeyPromise = _crypto2.default.symEncryptObject(commonKey, dataKey);
-                var encryptedDataPromise = encryptionMethod(dataKey, data);
+            var encryptedDataKeyPromise = _crypto2.default.symEncryptObject(commonKey, dataKey);
+            var encryptedDataPromise = encryptionMethod(dataKey, data);
 
-                return Promise.all([encryptedDataPromise, encryptedDataKeyPromise]);
-            });
-        };
+            return Promise.all([encryptedDataPromise, encryptedDataKeyPromise]);
+        });
     };
 };
-
-var createEncryptArrayBufferView = createEncryptData(_crypto2.default.symEncrypt);
-
-var createEncryptBlobs = createEncryptData(function (dataKey, blobArray) {
-    return Promise.all(blobArray.map(function (blob) {
-        return _crypto2.default.symEncryptBlob(dataKey, blob);
-    }));
-});
-
-var createEncryptString = createEncryptData(_crypto2.default.symEncryptString);
-
-var createEncryptObject = createEncryptData(_crypto2.default.symEncryptObject);
 
 // createDecryptData :: Promise(JWK) -> String, ArrayBuffer -> Promise(ArrayBuffer)
 var createDecryptData = function createDecryptData(commonKeyPromise) {
@@ -4649,20 +4649,21 @@ var createCryptoService = function createCryptoService(userId) {
         return user.commonKey;
     });
 
-    // encryptData :: ArrayBufferView -> Promise([ArrayBufferView, String(base64)])
-    var encryptArrayBufferView = createEncryptArrayBufferView(commonKeyPromise);
     // encryptString :: String -> Promise([String(base64), String(base64)])
-    var encryptString = createEncryptString(commonKeyPromise);
+    var encryptString = createEncrypt(commonKeyPromise, _crypto2.default.symEncryptString);
     // encryptBlobs :: [ArrayBufferView] -> Promise([[ArrayBufferView], String(base64)])
-    var encryptBlobs = createEncryptBlobs(commonKeyPromise);
+    var encryptBlobs = createEncrypt(commonKeyPromise, function (dataKey, blobArray) {
+        return Promise.all(blobArray.map(function (blob) {
+            return _crypto2.default.symEncryptBlob(dataKey, blob);
+        }));
+    });
     // encryptObject :: ArrayBufferView -> Promise([String(base64), String(base64)])
-    var encryptObject = createEncryptObject(commonKeyPromise);
+    var encryptObject = createEncrypt(commonKeyPromise, _crypto2.default.symEncryptObject);
 
     // decryptData :: ArrayBuffer -> ArrayBuffer -> Promise(ArrayBuffer)
     var decryptData = createDecryptData(commonKeyPromise);
 
     return {
-        encryptArrayBufferView: encryptArrayBufferView,
         encryptString: encryptString,
         encryptBlobs: encryptBlobs,
         encryptObject: encryptObject,
@@ -4704,8 +4705,7 @@ var HCDocument = function HCDocument() {
         _ref$type = _ref.type,
         type = _ref$type === undefined ? 'Document' : _ref$type,
         title = _ref.title,
-        _ref$creationDate = _ref.creationDate,
-        creationDate = _ref$creationDate === undefined ? new Date() : _ref$creationDate,
+        customCreationDate = _ref.customCreationDate,
         author = _ref.author,
         additionalIds = _ref.additionalIds,
         annotations = _ref.annotations,
@@ -4713,14 +4713,14 @@ var HCDocument = function HCDocument() {
 
     _classCallCheck(this, HCDocument);
 
-    if (!(Array.isArray(files) && (!additionalIds || (typeof additionalIds === 'undefined' ? 'undefined' : _typeof(additionalIds)) === 'object') && typeof type === 'string' && (!annotations || (typeof annotations === 'undefined' ? 'undefined' : _typeof(annotations)) === 'object') && typeof title === 'string' && creationDate instanceof Date && (!author || (typeof author === 'undefined' ? 'undefined' : _typeof(author)) === 'object'))) {
+    if (!(Array.isArray(files) && (!additionalIds || (typeof additionalIds === 'undefined' ? 'undefined' : _typeof(additionalIds)) === 'object') && typeof type === 'string' && (!annotations || (typeof annotations === 'undefined' ? 'undefined' : _typeof(annotations)) === 'object') && typeof title === 'string' && (!customCreationDate || customCreationDate instanceof Date) && (!author || (typeof author === 'undefined' ? 'undefined' : _typeof(author)) === 'object'))) {
         throw new _ValidationError2.default('HCDocument: Invalid arguments');
     }
     this.attachments = files.map(function (file) {
         return new _HCAttachment2.default({ file: file });
     });
     this.type = type;
-    this.creationDate = creationDate;
+    this.customCreationDate = customCreationDate;
     this.title = title;
     this.author = author;
     this.additionalIds = additionalIds;
@@ -4948,6 +4948,10 @@ exports.default = hcSpecialtyUtils;
 "use strict";
 
 
+var _config = __webpack_require__(0);
+
+var _config2 = _interopRequireDefault(_config);
+
 var _documentService = __webpack_require__(31);
 
 var _documentService2 = _interopRequireDefault(_documentService);
@@ -4956,7 +4960,7 @@ var _crypto = __webpack_require__(4);
 
 var _crypto2 = _interopRequireDefault(_crypto);
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
@@ -4980,11 +4984,11 @@ var _HCAuthor = __webpack_require__(28);
 
 var _HCAuthor2 = _interopRequireDefault(_HCAuthor);
 
-var _HCSpecialty = __webpack_require__(91);
+var _HCSpecialty = __webpack_require__(92);
 
 var _HCSpecialty2 = _interopRequireDefault(_HCSpecialty);
 
-var _authCloud = __webpack_require__(92);
+var _authCloud = __webpack_require__(93);
 
 var _authCloud2 = _interopRequireDefault(_authCloud);
 
@@ -5028,8 +5032,9 @@ var healthCloud = {
      *      of the logged in user
      * @returns {Promise<String>} the id of the logged in user
      */
-    setup: function setup(clientId, base64PrivateKey, requestAccessToken) {
+    setup: function setup(clientId, environment, base64PrivateKey, requestAccessToken) {
         _taggingUtils2.default.clientId = clientId;
+        _config2.default.environmentConfig = _config.envConfig[environment];
         _hcRequest2.default.requestAccessToken = requestAccessToken;
         _userService2.default.setPrivateKey(base64PrivateKey);
         return requestAccessToken().then(function (accessToken) {
@@ -5088,7 +5093,7 @@ var _taggingUtils = __webpack_require__(6);
 
 var _taggingUtils2 = _interopRequireDefault(_taggingUtils);
 
-var _hcDocumentUtils = __webpack_require__(88);
+var _hcDocumentUtils = __webpack_require__(89);
 
 var _hcDocumentUtils2 = _interopRequireDefault(_hcDocumentUtils);
 
@@ -5106,9 +5111,20 @@ var _cryptoService2 = _interopRequireDefault(_cryptoService);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var documentService = {
-    fhirService: _fhirService2.default,
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+var separateByGiven = function separateByGiven(attribute, collection) {
+    return collection.reduce(function (sum, value) {
+        if (value[attribute]) {
+            sum.withAttribute.push(value);
+        } else {
+            sum.withoutAttribute.push(value);
+        }
+        return sum;
+    }, { withAttribute: [], withoutAttribute: [] });
+};
+
+var documentService = {
     /**
      * Downloads the document with given owner and documentId with all its files.
      *
@@ -5119,13 +5135,15 @@ var documentService = {
     downloadDocument: function downloadDocument(ownerId, documentId) {
         var hcDocument = void 0;
         var encryptedAttachmentKey = void 0;
-        return this.fhirService.downloadFhirRecord(ownerId, documentId).then(function (record) {
-            hcDocument = _hcDocumentUtils2.default.fromFhirObject(record.body);
+        return _fhirService2.default.downloadFhirRecord(ownerId, documentId).then(function (record) {
+            hcDocument = _hcDocumentUtils2.default.fromFhirObject(record.fhirResource);
             hcDocument.client = _taggingUtils2.default.getTagValueFromList(record.tags, _taggingUtils.tagKeys.client);
             hcDocument.annotations = _taggingUtils2.default.getAnnotations(record.tags);
+            hcDocument.updatedDate = record.updatedDate;
+            hcDocument.customCreationDate = record.customCreationDate;
             encryptedAttachmentKey = record.attachment_key;
             return Promise.all(hcDocument.attachments.map(function (attachment) {
-                return _documentRoutes2.default.getFileDownloadUrl(ownerId, documentId, attachment.id);
+                return _documentRoutes2.default.getFileDownloadURL(ownerId, documentId, attachment.id);
             }));
         }).then(function (sasUrls) {
             return Promise.all(sasUrls.map(function (sasUrl) {
@@ -5165,8 +5183,16 @@ var documentService = {
         if (!_hcDocumentUtils2.default.isValid(hcDocument)) {
             return Promise.reject(new _ValidationError2.default('Not a valid hcDocument'));
         }
-
-        return this.fhirService.createFhirRecord(ownerId, _hcDocumentUtils2.default.toFhirObject(hcDocument, this.clientId)).then(function (record) {
+        // creationDate is only set during the upload of document.
+        hcDocument.creationDate = new Date();
+        // If there is no customCreationDate, it is set same as creationDate;
+        if (!hcDocument.customCreationDate) {
+            hcDocument.customCreationDate = hcDocument.creationDate;
+        }
+        return _fhirService2.default.createFhirRecord(ownerId, {
+            fhirResource: _hcDocumentUtils2.default.toFhirObject(hcDocument, this.clientId),
+            customCreationDate: hcDocument.customCreationDate
+        }).then(function (record) {
             hcDocument.id = record.record_id;
             return _this.updateDocument(ownerId, hcDocument);
         });
@@ -5187,43 +5213,40 @@ var documentService = {
             return Promise.reject(new _ValidationError2.default('Not a valid hcDocument'));
         }
 
-        var attachmentKey = void 0;
+        var _separateByGiven = separateByGiven('id', hcDocument.attachments),
+            oldAttachments = _separateByGiven.withAttribute,
+            newAttachments = _separateByGiven.withoutAttribute;
 
-        var newAttachments = [];
-        var oldAttachments = [];
-        hcDocument.attachments.forEach(function (attachment) {
-            if (attachment.id) {
-                oldAttachments.push(attachment);
-            } else {
-                newAttachments.push(attachment);
-            }
+        var attachmentKeyPromise = _documentRoutes2.default.downloadRecord(ownerId, hcDocument.id).then(function (record) {
+            return record.attachment_key;
         });
 
-        var recordPromise = _documentRoutes2.default.downloadRecord(ownerId, hcDocument.id);
-
-        var encryptedFilesPromise = recordPromise.then(function (record) {
+        var encryptedFilesPromise = attachmentKeyPromise.then(function (ak) {
             return (0, _cryptoService2.default)(ownerId).encryptBlobs(newAttachments.map(function (attachment) {
                 return attachment.file;
-            }), record.attachment_key);
+            }), ak);
         });
 
-        return Promise.all([encryptedFilesPromise, newAttachments.length ? _documentRoutes2.default.getFileUploadUrls(ownerId, hcDocument.id, newAttachments.length) : Promise.resolve([])]).then(function (_ref) {
+        return Promise.all([encryptedFilesPromise, newAttachments.length ? _documentRoutes2.default.getFileUploadURLs(ownerId, hcDocument.id, newAttachments.length) : Promise.resolve([])]).then(function (_ref) {
             var _ref2 = _slicedToArray(_ref, 2),
-                fileEncryptionResult = _ref2[0],
+                _ref2$ = _slicedToArray(_ref2[0], 2),
+                encryptedFiles = _ref2$[0],
+                attachmentKey = _ref2$[1],
                 uploadInformation = _ref2[1];
 
-            if (fileEncryptionResult && fileEncryptionResult[1]) {
-                attachmentKey = fileEncryptionResult[1];
-            }
-            var uploadFilePromise = Promise.all(fileEncryptionResult[0].map(function (encryptedBlob, index) {
+            var uploadFilesPromise = encryptedFiles.map(function (encryptedFile, index) {
                 newAttachments[index].id = uploadInformation[index].id;
-                return _fileRoutes2.default.uploadFile(uploadInformation[index].sas_token, encryptedBlob);
-            }));
-            return uploadFilePromise;
-        }).then(function () {
-            var customTags = hcDocument.annotations ? _taggingUtils2.default.generateCustomTags(hcDocument.annotations) : [];
-            hcDocument.attachments = [].concat(oldAttachments, newAttachments);
-            return _this2.fhirService.updateFhirRecord(ownerId, hcDocument.id, _hcDocumentUtils2.default.toFhirObject(hcDocument, _this2.clientId), customTags, attachmentKey);
+                return _fileRoutes2.default.uploadFile(uploadInformation[index].sas_token, encryptedFile);
+            });
+            hcDocument.attachments = [].concat(_toConsumableArray(oldAttachments), _toConsumableArray(newAttachments));
+            var updateFhirRecordPromise = _fhirService2.default.updateFhirRecord(ownerId, {
+                id: hcDocument.id,
+                fhirResource: _hcDocumentUtils2.default.toFhirObject(hcDocument, _this2.clientId),
+                tags: _taggingUtils2.default.generateCustomTags(hcDocument.annotations),
+                attachmentKey: attachmentKey,
+                customCreationDate: hcDocument.customCreationDate
+            });
+            return Promise.all([updateFhirRecordPromise, Promise.all(uploadFilesPromise)]);
         }).then(function () {
             return hcDocument;
         });
@@ -5236,7 +5259,7 @@ var documentService = {
      * @param {String} documentId - the id of the hcDocument that should be deleted
      */
     deleteDocument: function deleteDocument(ownerId, documentId) {
-        return this.fhirService.deleteRecord(ownerId, documentId);
+        return _fhirService2.default.deleteRecord(ownerId, documentId);
     },
 
 
@@ -5252,11 +5275,13 @@ var documentService = {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
         params.tags = [_taggingUtils2.default.buildTag('resourceType', 'documentReference')];
-        return this.fhirService.searchRecords(ownerId, params).then(function (result) {
+        return _fhirService2.default.searchRecords(ownerId, params).then(function (result) {
             result.records = result.records.map(function (record) {
-                var hcDocument = _hcDocumentUtils2.default.fromFhirObject(record.body);
+                var hcDocument = _hcDocumentUtils2.default.fromFhirObject(record.fhirResource);
                 hcDocument.client = _taggingUtils2.default.getTagValueFromList(record.tags, _taggingUtils.tagKeys.client);
                 hcDocument.annotations = _taggingUtils2.default.getAnnotations(record.tags);
+                hcDocument.updatedDate = record.updatedDate;
+                hcDocument.customCreationDate = record.customCreationDate;
                 hcDocument.id = record.record_id;
                 return hcDocument;
             });
@@ -5275,7 +5300,7 @@ var documentService = {
         var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
         params.tags = [_taggingUtils2.default.buildTag('resourceType', 'documentReference')];
-        return this.fhirService.searchRecords(ownerId, params, true).then(function (res) {
+        return _fhirService2.default.searchRecords(ownerId, params, true).then(function (res) {
             return res.totalCount;
         });
     }
@@ -12126,22 +12151,20 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _config = __webpack_require__(2);
+var _config = __webpack_require__(0);
 
 var _config2 = _interopRequireDefault(_config);
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var apiUrl = _config2.default.api;
-
 var authRoutes = {
     fetchAccessToken: function fetchAccessToken(userId) {
         var query = { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', owner: userId };
-        return _hcRequest2.default.submit('POST', apiUrl + '/oauth/token', { query: query, authorize: true });
+        return _hcRequest2.default.submit('POST', _config2.default.apiUrl() + '/oauth/token', { query: query, authorize: true });
     }
 };
 
@@ -12158,7 +12181,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
@@ -12190,6 +12213,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _fhirValidator = __webpack_require__(44);
 
 var _fhirValidator2 = _interopRequireDefault(_fhirValidator);
@@ -12206,7 +12231,7 @@ var _taggingUtils = __webpack_require__(6);
 
 var _taggingUtils2 = _interopRequireDefault(_taggingUtils);
 
-var _dateUtils = __webpack_require__(87);
+var _dateUtils = __webpack_require__(88);
 
 var _dateUtils2 = _interopRequireDefault(_dateUtils);
 
@@ -12223,73 +12248,110 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 var fhirService = {
-    updateFhirRecord: function updateFhirRecord(ownerId, recordId, fhirObject) {
-        var _this = this;
-
-        var customTags = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        var attachmentKey = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
-
+    /**
+     * @param {string} ownerId
+     * @param {Object} record
+     * @param {string} record.id
+     * @param {Object} record.fhirResource The Fhir Resource contained in record
+     * @param {Array<string>} record.tags
+     * @param {string} record.attachmentKey
+     * @param {Date} record.customCreationDate The custom date entered by user
+     * @param {Date} record.updatedDate The date of update of record
+     * @returns {Promise<Object>}
+     */
+    updateFhirRecord: function updateFhirRecord(ownerId, record) {
         var updateRequest = function updateRequest(userId, params) {
-            return _documentRoutes2.default.updateRecord(userId, recordId, params);
+            return _documentRoutes2.default.updateRecord(userId, record.id, params);
         };
 
-        return this.downloadFhirRecord(ownerId, recordId).then(function (record) {
-            var updatedFhirObject = Object.assign(record.body, fhirObject);
-            return _this.uploadFhirRecord(ownerId, updatedFhirObject, updateRequest, customTags, attachmentKey);
+        return this.uploadFhirRecord(ownerId, record, updateRequest);
+    },
+
+
+    /**
+     * @param {string} ownerId
+     * @param {Object} record
+     * @returns {Promise<Object>}
+     */
+    createFhirRecord: function createFhirRecord(ownerId, record) {
+        return this.uploadFhirRecord(ownerId, record, _documentRoutes2.default.createRecord);
+    },
+
+    /**
+     * @param {string} ownerId
+     * @param {Object} record
+     * @param {string} record.id
+     * @param {Object} record.fhirResource The Fhir Resource contained in record
+     * @param {Array<string>} record.tags
+     * @param {string} record.attachmentKey
+     * @param {Date} record.customCreationDate The custom date entered by user
+     * @param {Date} record.updatedDate The date of update of record
+     * @returns {Promise<Object>}
+     */
+    uploadFhirRecord: function uploadFhirRecord(ownerId, record, uploadRequest) {
+        var _this = this;
+
+        return _fhirValidator2.default.validate(record.fhirResource).then(function () {
+            record.tags = [].concat(_toConsumableArray(record.tags || []), _toConsumableArray(_taggingUtils2.default.generateTags(record.fhirResource)));
+            return _this.uploadRecord(ownerId, record, uploadRequest);
         });
     },
-    createFhirRecord: function createFhirRecord(ownerId, fhirObject) {
-        return this.uploadFhirRecord(ownerId, fhirObject, _documentRoutes2.default.createRecord);
-    },
-    uploadFhirRecord: function uploadFhirRecord(ownerId, fhirResource, uploadRequest) {
-        var _this2 = this;
 
-        var customTags = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-        var attachmentKey = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
-
-        return _fhirValidator2.default.validate(fhirResource).then(function () {
-            var tags = [].concat(_toConsumableArray(customTags), _toConsumableArray(_taggingUtils2.default.generateTags(fhirResource)));
-            return _this2.uploadRecord(ownerId, fhirResource, uploadRequest, tags, attachmentKey);
-        });
-    },
-    uploadRecord: function uploadRecord(ownerId, resource, uploadRequest, tags, attachmentKey) {
+    /**
+     * @param {string} ownerId
+     * @param {Object} record
+     * @param {string} record.id
+     * @param {Object} record.fhirResource The Fhir Resource contained in record
+     * @param {Array<string>} record.tags
+     * @param {string} record.attachmentKey
+     * @param {Date} record.customCreationDate The custom date entered by user
+     * @param {Date} record.updatedDate The date of update of record
+     * @returns {Promise<Object>}
+     */
+    uploadRecord: function uploadRecord(ownerId, record, uploadRequest) {
         var owner = void 0;
         return _userService2.default.getUser(ownerId).then(function (user) {
             owner = user;
-            return Promise.all([(0, _cryptoService2.default)(owner.id).encryptObject(resource), Promise.all(tags.map(function (tag) {
+            return Promise.all([(0, _cryptoService2.default)(owner.id).encryptObject(record.fhirResource), Promise.all(record.tags.map(function (tag) {
                 return _crypto2.default.symEncryptString(owner.tek, tag);
             }))]);
-        }).then(function (results) {
-            var dataIndex = 0;
-            var keyIndex = 1;
+        }).then(function (_ref) {
+            var _ref2 = _slicedToArray(_ref, 2),
+                _ref2$ = _slicedToArray(_ref2[0], 2),
+                cipherData = _ref2$[0],
+                cipherKey = _ref2$[1],
+                encryptedTags = _ref2[1];
+
             var params = {
-                encrypted_body: results[0][dataIndex],
-                encrypted_key: results[0][keyIndex],
-                encrypted_tags: results[1],
-                date: _dateUtils2.default.formatDateYyyyMmDd(new Date()),
-                attachment_key: attachmentKey
+                encrypted_body: cipherData,
+                encrypted_key: cipherKey,
+                encrypted_tags: encryptedTags,
+                date: _dateUtils2.default.formatDateYyyyMmDd(record.customCreationDate || new Date()),
+                attachment_key: record.attachmentKey,
+                model_version: 1
             };
             return uploadRequest(owner.id, params);
         }).then(function (result) {
             return {
-                body: resource,
-                tags: tags,
-                date: result.date,
+                fhirResource: record.fhirResource,
+                tags: record.tags,
+                customCreationDate: result.date,
+                updatedDate: result.createdAt,
                 record_id: result.record_id
             };
         });
     },
     downloadFhirRecord: function downloadFhirRecord(ownerId, recordId) {
-        var _this3 = this;
+        var _this2 = this;
 
         return _documentRoutes2.default.downloadRecord(ownerId, recordId).then(function (result) {
             return _userService2.default.getUser(ownerId).then(function (user) {
-                return _this3.decryptRecordAndTags(result, user.tek);
+                return _this2.decryptRecordAndTags(result, user.tek);
             });
         });
     },
     searchRecords: function searchRecords(ownerId, params) {
-        var _this4 = this;
+        var _this3 = this;
 
         var countOnly = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
 
@@ -12323,25 +12385,32 @@ var fhirService = {
         }).then(function (searchResult) {
             totalCount = searchResult.totalCount;
             return searchResult.records ? Promise.all(searchResult.records.map(function (result) {
-                return _this4.decryptRecordAndTags(result, user.tek);
+                return _this3.decryptRecordAndTags(result, user.tek).catch(function (err) {
+                    console.warn('Decryption failed for record: ' + result.record_id, err);
+                    return new Error(err);
+                });
             })) : undefined;
         }).then(function (results) {
-            return results ? { totalCount: totalCount, records: results } : { totalCount: totalCount };
+            return results ? { totalCount: totalCount, records: results.filter(function (result) {
+                    return !(result instanceof Error);
+                }) } : { totalCount: totalCount };
         });
     },
-    deleteRecord: function deleteRecord(ownerId, recordID) {
-        return _documentRoutes2.default.deleteRecord(ownerId, recordID);
+    deleteRecord: function deleteRecord(ownerId, recordId) {
+        return _documentRoutes2.default.deleteRecord(ownerId, recordId);
     },
-    decryptRecordAndTags: function decryptRecordAndTags(record, tek) {
+    decryptRecordAndTags: function decryptRecordAndTags(record, tagKey) {
         var tagsPromise = Promise.all(record.encrypted_tags.map(function (tag) {
-            return _crypto2.default.symDecryptString(tek, tag);
+            return _crypto2.default.symDecryptString(tagKey, tag);
         }));
 
         var recordPromise = (0, _cryptoService2.default)(record.user_id).decryptData(record.encrypted_key, _crypto2.default.convertBase64ToArrayBufferView(record.encrypted_body)).then(_crypto2.default.convertArrayBufferViewToString).then(JSON.parse);
         return Promise.all([recordPromise, tagsPromise]).then(function (results) {
             return {
-                body: results[0],
+                fhirResource: results[0],
                 tags: results[1],
+                updatedDate: new Date(record.createdAt),
+                customCreationDate: new Date(record.date),
                 record_id: record.record_id,
                 attachment_key: record.attachment_key
             };
@@ -12465,7 +12534,7 @@ exports.default = new FhirValidator();
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var resolve = __webpack_require__(7),
-    util = __webpack_require__(1),
+    util = __webpack_require__(2),
     errorClasses = __webpack_require__(9),
     stableStringify = __webpack_require__(19);
 
@@ -14450,7 +14519,7 @@ Cache.prototype.clear = function Cache_clear() {
 "use strict";
 
 
-var util = __webpack_require__(1);
+var util = __webpack_require__(2);
 
 var DATE = /^\d\d\d\d-(\d\d)-(\d\d)$/;
 var DAYS = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -14585,7 +14654,7 @@ function regex(str) {
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 var ruleModules = __webpack_require__(58),
-    toHash = __webpack_require__(1).toHash;
+    toHash = __webpack_require__(2).toHash;
 
 module.exports = function rules() {
   var RULES = [{ type: 'number',
@@ -17465,11 +17534,11 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _config = __webpack_require__(2);
+var _config = __webpack_require__(0);
 
 var _config2 = _interopRequireDefault(_config);
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
@@ -17496,38 +17565,36 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _config = __webpack_require__(2);
+var _config = __webpack_require__(0);
 
 var _config2 = _interopRequireDefault(_config);
 
-var _hcRequest = __webpack_require__(0);
+var _hcRequest = __webpack_require__(1);
 
 var _hcRequest2 = _interopRequireDefault(_hcRequest);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var apiUrl = _config2.default.api;
-
 var userRoutes = {
     resolveUserId: function resolveUserId(hcUserAlias) {
         var body = { value: hcUserAlias };
 
-        return _hcRequest2.default.submit('POST', apiUrl + '/users/resolve', { body: body });
+        return _hcRequest2.default.submit('POST', _config2.default.apiUrl() + '/users/resolve', { body: body });
     },
     getUserDetails: function getUserDetails(userId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + userId, { authorize: true });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + userId, { authorize: true });
     },
     fetchUserInfo: function fetchUserInfo(userId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/userinfo', { authorize: true, ownerId: userId });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/userinfo', { authorize: true, ownerId: userId });
     },
     updateUser: function updateUser(userId, userData) {
-        return _hcRequest2.default.submit('PUT', apiUrl + '/users/' + userId, { body: userData, authorize: true });
+        return _hcRequest2.default.submit('PUT', _config2.default.apiUrl() + '/users/' + userId, { body: userData, authorize: true });
     },
     getReceivedPermissions: function getReceivedPermissions(userId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/users/' + userId + '/permissions', { authorize: true });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/users/' + userId + '/permissions', { authorize: true });
     },
     getCAPs: function getCAPs(appId) {
-        return _hcRequest2.default.submit('GET', apiUrl + '/permissions', { authorize: true, query: { app_id: appId } });
+        return _hcRequest2.default.submit('GET', _config2.default.apiUrl() + '/permissions', { authorize: true, query: { app_id: appId } });
     },
     grantPermission: function grantPermission(ownerId, granteeId, appId, commonKey, scope) {
         var scopeString = scope.join(' ');
@@ -17537,7 +17604,7 @@ var userRoutes = {
             app_id: appId,
             scope: scopeString
         };
-        return _hcRequest2.default.submit('POST', apiUrl + '/users/' + ownerId + '/permissions', { body: body, authorize: true });
+        return _hcRequest2.default.submit('POST', _config2.default.apiUrl() + '/users/' + ownerId + '/permissions', { body: body, authorize: true });
     }
 };
 
@@ -17545,6 +17612,133 @@ exports.default = userRoutes;
 
 /***/ }),
 /* 85 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.byteLength = byteLength;
+exports.toByteArray = toByteArray;
+exports.fromByteArray = fromByteArray;
+
+var lookup = [];
+var revLookup = [];
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
+
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+for (var i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i];
+  revLookup[code.charCodeAt(i)] = i;
+}
+
+// Support decoding URL-safe base64 strings, as Node.js does.
+// See: https://en.wikipedia.org/wiki/Base64#URL_applications
+revLookup['-'.charCodeAt(0)] = 62;
+revLookup['_'.charCodeAt(0)] = 63;
+
+function getLens(b64) {
+  var len = b64.length;
+
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4');
+  }
+
+  // Trim off extra bytes after placeholder bytes are found
+  // See: https://github.com/beatgammit/base64-js/issues/42
+  var validLen = b64.indexOf('=');
+  if (validLen === -1) validLen = len;
+
+  var placeHoldersLen = validLen === len ? 0 : 4 - validLen % 4;
+
+  return [validLen, placeHoldersLen];
+}
+
+// base64 is 4/3 + up to two characters of the original data
+function byteLength(b64) {
+  var lens = getLens(b64);
+  var validLen = lens[0];
+  var placeHoldersLen = lens[1];
+  return (validLen + placeHoldersLen) * 3 / 4 - placeHoldersLen;
+}
+
+function _byteLength(b64, validLen, placeHoldersLen) {
+  return (validLen + placeHoldersLen) * 3 / 4 - placeHoldersLen;
+}
+
+function toByteArray(b64) {
+  var tmp;
+  var lens = getLens(b64);
+  var validLen = lens[0];
+  var placeHoldersLen = lens[1];
+
+  var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen));
+
+  var curByte = 0;
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  var len = placeHoldersLen > 0 ? validLen - 4 : validLen;
+
+  for (var i = 0; i < len; i += 4) {
+    tmp = revLookup[b64.charCodeAt(i)] << 18 | revLookup[b64.charCodeAt(i + 1)] << 12 | revLookup[b64.charCodeAt(i + 2)] << 6 | revLookup[b64.charCodeAt(i + 3)];
+    arr[curByte++] = tmp >> 16 & 0xFF;
+    arr[curByte++] = tmp >> 8 & 0xFF;
+    arr[curByte++] = tmp & 0xFF;
+  }
+
+  if (placeHoldersLen === 2) {
+    tmp = revLookup[b64.charCodeAt(i)] << 2 | revLookup[b64.charCodeAt(i + 1)] >> 4;
+    arr[curByte++] = tmp & 0xFF;
+  }
+
+  if (placeHoldersLen === 1) {
+    tmp = revLookup[b64.charCodeAt(i)] << 10 | revLookup[b64.charCodeAt(i + 1)] << 4 | revLookup[b64.charCodeAt(i + 2)] >> 2;
+    arr[curByte++] = tmp >> 8 & 0xFF;
+    arr[curByte++] = tmp & 0xFF;
+  }
+
+  return arr;
+}
+
+function tripletToBase64(num) {
+  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F];
+}
+
+function encodeChunk(uint8, start, end) {
+  var tmp;
+  var output = [];
+  for (var i = start; i < end; i += 3) {
+    tmp = (uint8[i] << 16 & 0xFF0000) + (uint8[i + 1] << 8 & 0xFF00) + (uint8[i + 2] & 0xFF);
+    output.push(tripletToBase64(tmp));
+  }
+  return output.join('');
+}
+
+function fromByteArray(uint8) {
+  var tmp;
+  var len = uint8.length;
+  var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
+  var parts = [];
+  var maxChunkLength = 16383; // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, i + maxChunkLength > len2 ? len2 : i + maxChunkLength));
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1];
+    parts.push(lookup[tmp >> 2] + lookup[tmp << 4 & 0x3F] + '==');
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1];
+    parts.push(lookup[tmp >> 10] + lookup[tmp >> 4 & 0x3F] + lookup[tmp << 2 & 0x3F] + '=');
+  }
+
+  return parts.join('');
+}
+
+/***/ }),
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17570,7 +17764,7 @@ var stringUtils = {
 exports.default = stringUtils;
 
 /***/ }),
-/* 86 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17593,7 +17787,7 @@ exports.default = SetupError;
 var NOT_SETUP = exports.NOT_SETUP = 'the sdk was not setup correctly';
 
 /***/ }),
-/* 87 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17614,7 +17808,7 @@ var helpers = {
 exports.default = helpers;
 
 /***/ }),
-/* 88 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17632,11 +17826,11 @@ var _HCDocument = __webpack_require__(27);
 
 var _HCDocument2 = _interopRequireDefault(_HCDocument);
 
-var _hcAttachmentUtils = __webpack_require__(89);
+var _hcAttachmentUtils = __webpack_require__(90);
 
 var _hcAttachmentUtils2 = _interopRequireDefault(_hcAttachmentUtils);
 
-var _hcAuthorUtils = __webpack_require__(90);
+var _hcAuthorUtils = __webpack_require__(91);
 
 var _hcAuthorUtils2 = _interopRequireDefault(_hcAuthorUtils);
 
@@ -17667,6 +17861,15 @@ var schema = {
                 maxLength: 256
             },
             maxLength: 16
+        },
+        creationDate: {
+            type: 'object'
+        },
+        updatedDate: {
+            type: 'object'
+        },
+        customCreationDate: {
+            type: 'object'
         }
     },
     required: ['title', 'attachments', 'type']
@@ -17681,7 +17884,6 @@ var hcDocumentUtils = {
     fromFhirObject: function fromFhirObject(fhirObject) {
         var hcDocument = new _HCDocument2.default({
             type: fhirObject.type.text,
-            creationDate: new Date(fhirObject.indexed),
             title: fhirObject.description,
             additionalIds: fhirObject.identifier && fhirObject.identifier.length > 0 ? fhirObject.identifier.reduce(function (obj, item) {
                 obj[item.assigner.reference] = item.value;
@@ -17689,6 +17891,10 @@ var hcDocumentUtils = {
             }, {}) : undefined,
             author: {}
         });
+        if (fhirObject.indexed) {
+            hcDocument.creationDate = new Date(fhirObject.indexed);
+        }
+
         hcDocument.attachments = fhirObject.content ? fhirObject.content.map(function (content) {
             return _hcAttachmentUtils2.default.fromFhirObject(content.attachment);
         }) : [];
@@ -17711,12 +17917,15 @@ var hcDocumentUtils = {
             resourceType: 'DocumentReference',
             status: 'current',
             type: { text: hcDocument.type },
-            indexed: hcDocument.creationDate.toISOString(),
             author: [{ reference: '#contained-author-id' }],
             description: hcDocument.title,
             subject: { reference: hcDocument.title },
             contained: []
         };
+        if (hcDocument.creationDate) {
+            fhirObject.indexed = hcDocument.creationDate.toISOString();
+        }
+
         fhirObject.content = hcDocument.attachments ? hcDocument.attachments.map(function (attachment) {
             return { attachment: _hcAttachmentUtils2.default.toFhirObject(attachment) };
         }) : [];
@@ -17724,7 +17933,6 @@ var hcDocumentUtils = {
         if (hcDocument.author) {
             fhirObject.contained.push(_hcAuthorUtils2.default.toFhirObject(hcDocument.author, clientId));
         }
-
         // Information about where the document was created.
         if (hcDocument.author && hcDocument.author.specialty) {
             fhirObject.context = {
@@ -17750,7 +17958,7 @@ var hcDocumentUtils = {
 exports.default = hcDocumentUtils;
 
 /***/ }),
-/* 89 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17799,7 +18007,7 @@ var hcAttachmentUtils = {
 exports.default = hcAttachmentUtils;
 
 /***/ }),
-/* 90 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -17950,7 +18158,7 @@ var hcAuthorUtils = {
 exports.default = hcAuthorUtils;
 
 /***/ }),
-/* 91 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18082,7 +18290,7 @@ var Specialty = {
 exports.default = Specialty;
 
 /***/ }),
-/* 92 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18145,6 +18353,7 @@ exports.default = {
     config: function config(_ref2) {
         var clientId = _ref2.clientId,
             clientURL = _ref2.clientURL,
+            environment = _ref2.environment,
             _ref2$sdk = _ref2.sdk,
             sdk = _ref2$sdk === undefined ? window.GC.SDK : _ref2$sdk,
             _ref2$globalWindow = _ref2.globalWindow,
@@ -18191,7 +18400,7 @@ exports.default = {
                     return getSession().then(pickToken);
                 });
 
-                return sdk.setup(clientId, privateKey, getToken);
+                return sdk.setup(clientId, environment, privateKey, getToken);
             }
 
             // returns an empty promise if the setup didn't work out

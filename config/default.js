@@ -10,9 +10,9 @@ module.exports = {
     oauth:{
         gesundheitscloud: {
             client_id: 'tmcc-aid-local',
-            client_secret: 'charite',
-            authorizationURL: 'https://staging.hpihc.de/oauth/authorize',
-            tokenURL: 'https://staging.hpihc.de/oauth/token',
+            client_secret: 'tmcctmcctmcc',
+            authorizationURL: 'https://api.gesundheitscloud.de/oauth/authorize',
+            tokenURL: 'https://api.gesundheitscloud.de/oauth/token',
             callbackURL: 'http://localhost:3000/auth/gc/callback'
         }
     }

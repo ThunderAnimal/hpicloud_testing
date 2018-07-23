@@ -1,7 +1,7 @@
-
 const path = require('path');
 const fs = require("fs");
 const {exec} = require('child_process');
+const uuidv4 = require('uuid/v4');
 
 const appRoot = require('app-root-path');
 
@@ -18,9 +18,12 @@ class TreeTagger {
      * @param cb Array<TreetaggerOut>
      */
     tagText(text, cb) {
+        const that = this;
         const today = Date.now();
-        const fileNameIn = today + '_in.txt';
-        const fileNameOut = today + '_out.txt';
+        const random = uuidv4();
+
+        const fileNameIn = today + '-' + random + '_in.txt';
+        const fileNameOut = today + '-' + random + '_out.txt';
 
         /**
          *
@@ -64,7 +67,7 @@ class TreeTagger {
                     console.error("file error: ", err);
                     throw err;
                 }
-                if(cb){
+                if (cb) {
                     cb();
                 }
             });
@@ -79,34 +82,34 @@ class TreeTagger {
         const execTreeTagger = function (filePathIn, filePathOut, cb) {
             exec("tag-german " + filePathIn + " " + filePathOut, (err) => {
                 if (err) {
-                    console.error(`exec error: ${error}`);
+                    console.error(`exec error: ${err}`);
                     throw err;
                 }
                 cb();
             });
         };
 
-        writeFile(path.join(this.workDir, fileNameIn), text, () => {
-            execTreeTagger(path.join(this.workDir, fileNameIn), path.join(this.workDir, fileNameOut), () => {
-                readFile(path.join(this.workDir, fileNameOut), (data) => {
+        writeFile(path.join(that.workDir, fileNameIn), text, () => {
+            execTreeTagger(path.join(that.workDir, fileNameIn), path.join(that.workDir, fileNameOut), () => {
+                readFile(path.join(that.workDir, fileNameOut), (data) => {
                     const arrayResult = [];
 
                     const eachLine = data.split("\n");
-                    for(let i = 0; i < eachLine.length; i++){
+                    for (let i = 0; i < eachLine.length; i++) {
                         const eachEntity = eachLine[i].split("\t");
 
-                        if(eachEntity[0] !== ""){
+                        if (eachEntity[0] !== "") {
                             arrayResult.push(new TreeTaggerOut(eachEntity[0], eachEntity[1], eachEntity[2].replace(/\r?\n|\r/, "")));
                         }
                     }
 
                     cb(arrayResult);
 
-                    deleteFile(path.join(this.workDir, fileNameIn));
-                    deleteFile(path.join(this.workDir, fileNameOut));
+                    deleteFile(path.join(that.workDir, fileNameIn));
+                    deleteFile(path.join(that.workDir, fileNameOut));
                 });
             });
-        })
+        });
     }
 
 }

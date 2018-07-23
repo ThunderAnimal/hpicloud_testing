@@ -23,8 +23,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("btnGrantPersmission").addEventListener("click", grantPermissionScience);
     document.getElementById("btnGetKeyServer").addEventListener("click", loadPublicKeyFromServer);
     document.getElementById("btnTestSecureConnection").addEventListener("click", testKeyChange);
-
-
+    document.getElementById("btnDataMiningSA").addEventListener("click", testDataMiningSA);
+    document.getElementById("btnDataMiningSAUnsecure").addEventListener("click", testDataMiningSAUnsecure);
 });
 
 function httpGetAsync(theUrl, callback) {
@@ -370,6 +370,56 @@ function testKeyChange() {
 
         console.log("Response Server: ", response);
         console.log("Data encypted: ", data_decrypted);
+        console.log("Time: ", endTime + "ms");
+    });
+}
+
+function testDataMiningSA() {
+    console.log("TEST DATA MINING SA");
+    console.log("==========");
+
+    const startTime = Date.now();
+
+    const sa = {"erhebungsphase":{"beschreibung":"Ich bin mit einer Freundin ausgegangen, habe sie heimgebracht und sagte ihr an der Tür gute Nacht.","interpretation":["Mir gelingt nichts.","Sie hätte mich sicher nicht hineingelassen."],"verhalten":"Ich unterhielt mich mit ihr, sagte ihr gute Nacht und ging.","kiesler_kreis":"","ergebnis_real":"Ich verabschiedete mich und ging.","ergebnis_wunsch":"Ich frage sie, ob ich hineinkommen darf.","ziel_erreicht":false,"ziel_nicht_erreicht_grund":"Ich habe mich nicht getraut zu fragen."},"loesungsphase":{"revision":["Wenn ich sie nicht frage, weiß sie vielleicht nicht, dass ich mit hineinkommen will.","Ich will sie fragen, ob ich mit hinein darf."],"schlachtrufe":[],"zielfuehrendes_verhalten":"Ich würde sagen: »Darf ich noch kurz mit hinein kommen?«","take_home_message":["Ich sollte meine Wünsche aussprechen, riskiere dabei aber einen Korb."],"transfer":["Ich werde meinem Freund morgen sagen, welchen Film ich im Kino am liebsten mit ihm sehen würde."]}};
+    const key = generateRadomKey(10);
+
+
+    const key_encrypted = cryptServer.encrypt(key);
+    const sa_encrypted = (CryptoJS.AES.encrypt(JSON.stringify(sa), key)).toString();
+
+    const body = {
+        sa: sa_encrypted,
+        key: key_encrypted,
+    };
+
+    httpPostAsync('api/v1/sa_analyze', body, (data) => {
+        const response = JSON.parse(data);
+        const data_decrypted = JSON.parse(CryptoJS.AES.decrypt(response.data, key).toString(CryptoJS.enc.Utf8));
+        const endTime = Date.now() - startTime;
+
+        console.log("Response Server: ", response);
+        console.log("Data encypted: ", data_decrypted);
+        console.log("Time: ", endTime + "ms");
+    });
+}
+
+function testDataMiningSAUnsecure() {
+    console.log("TEST DATA MINING SA Unsecure");
+    console.log("==========");
+
+    const startTime = Date.now();
+
+    const sa = {"erhebungsphase":{"beschreibung":"Ich bin mit einer Freundin ausgegangen, habe sie heimgebracht und sagte ihr an der Tür gute Nacht.","interpretation":["Mir gelingt nichts.","Sie hätte mich sicher nicht hineingelassen."],"verhalten":"Ich unterhielt mich mit ihr, sagte ihr gute Nacht und ging.","kiesler_kreis":"","ergebnis_real":"Ich verabschiedete mich und ging.","ergebnis_wunsch":"Ich frage sie, ob ich hineinkommen darf.","ziel_erreicht":false,"ziel_nicht_erreicht_grund":"Ich habe mich nicht getraut zu fragen."},"loesungsphase":{"revision":["Wenn ich sie nicht frage, weiß sie vielleicht nicht, dass ich mit hineinkommen will.","Ich will sie fragen, ob ich mit hinein darf."],"schlachtrufe":[],"zielfuehrendes_verhalten":"Ich würde sagen: »Darf ich noch kurz mit hinein kommen?«","take_home_message":["Ich sollte meine Wünsche aussprechen, riskiere dabei aber einen Korb."],"transfer":["Ich werde meinem Freund morgen sagen, welchen Film ich im Kino am liebsten mit ihm sehen würde."]}};
+
+    const body = {
+        sa: sa,
+    };
+
+    httpPostAsync('api/v1/sa_analyze_plain', body, (data) => {
+        const response = JSON.parse(data);
+        const endTime = Date.now() - startTime;
+
+        console.log("Response Server: ", response);
         console.log("Time: ", endTime + "ms");
     });
 }
