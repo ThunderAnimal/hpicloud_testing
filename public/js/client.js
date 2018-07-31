@@ -50,36 +50,49 @@ function httpPostAsync(theUrl, data, callback) {
 }
 
 function init() {
-    GC.AUTH.config({
-        clientId: window.clientId,
-        clientURL: window.clientURL,
-    });
+    // GC.AUTH.config({
+    //     clientId: window.clientId,
+    //     clientURL: window.clientURL,
+    //     environment: 'development'
+    // });
 
-    GC.AUTH.loggedIn.then((isLoggedIn) => {
-        drawLoginState();
-    });
+    // GC.AUTH.loggedIn.then((isLoggedIn) => {
+    //     drawLoginState();
+    // });
 
     cryptServer = new JSEncrypt();
     showKeysServer("");
 
+    /*GC.SDK.createCAP()
+        .then((data) => {
+           console.log(data);
+        });*/
 
-    // httpGetAsync('auth/token', (data) =>{
-    //     if(data.Token){
-    //         GC.SDK.setup(clientId, data.PrivateKey, () => {
-    //             return new Promise(function (resolve) {
-    //                 resolve(data.Token);
-    //             })
-    //         }).then(() =>{
-    //             drawLoginState();
-    //         });
-    //     } else {
-    //         drawLoginState();
-    //     }
-    // });
+
+    httpGetAsync('auth/gctoken', (response) =>{
+        const data = JSON.parse(response);
+        console.log(data);
+        if(data.token && data.private_key){
+            GC.SDK.setup(window.clientId, 'development', data.private_key, () => {
+                return new Promise((resolve) => resolve(data.token))
+            }).then(() =>{
+                drawLoginState();
+            });
+        } else {
+            drawLoginState();
+        }
+    });
 }
 
 function login() {
-    GC.AUTH.login();
+    // GC.AUTH.login();
+    GC.SDK.createCAP()
+        .then(({publicKey, privateKey}) => {
+            httpPostAsync(`${clientURL}/gckeys`, { private_key: privateKey, public_key: publicKey },
+                function () {
+                    window.location.href = `${window.clientURL}/gclogin?public_key=${publicKey}`;
+                });
+        });
 }
 
 function logout() {
@@ -237,6 +250,7 @@ function uploadData() {
 
     const files = [dummyFile];
 
+    const timeStart = Date.now();
     const document = new GC.SDK.models.HCDocument({
         files,
         title: "Title der SA",
@@ -250,9 +264,10 @@ function uploadData() {
 
     GC.SDK.uploadDocument(userId, document)
         .then((response) => {
-            console.log("Result Document: ", response);
             const r = new FileReader();
             r.onloadend = function () {
+                console.log("Finished Load Documents:", (Date.now() - timeStart) + " ms");
+                console.log("Result Document: ", response);
                 console.log("File Information: ", JSON.parse(r.result));
             };
             r.readAsText(response.attachments[0].file);

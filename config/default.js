@@ -11,8 +11,8 @@ module.exports = {
         gesundheitscloud: {
             client_id: 'tmcc-aid-local',
             client_secret: 'tmcctmcctmcc',
-            authorizationURL: 'https://api.gesundheitscloud.de/oauth/authorize',
-            tokenURL: 'https://api.gesundheitscloud.de/oauth/token',
+            authorizationURL: 'https://api-dev.hpsgc.de/oauth/authorize',
+            tokenURL: 'https://api-dev.hpsgc.de/oauth/token',
             callbackURL: 'http://localhost:3000/auth/gc/callback'
         }
     }
