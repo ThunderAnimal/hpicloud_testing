@@ -1,6 +1,5 @@
-
-
 const SAAnalyzerOutput = require("../model/sa-analyzer-output");
+const KorrekturModel = require("../model/korrektur-model");
 const tagHelper = require("./tag-helper");
 const analyzerEmotion = require('./emotion-analyzer');
 
@@ -9,6 +8,13 @@ class SAAnalyzer {
     constructor(dictManager) {
         this.treeTager = require("./tree-tagger");
         this.emotionTagger = require("./emotion-tagger")(dictManager);
+
+        this.thresholdWeight = 0.15;
+        this.thresholdSenseRateAll = 0.3;
+        this.thresholdSenseRateInspectedList = 0.4;
+
+        this.thresholdWordsNormal = 15;
+        this.thresholdWordsShort = 8;
     }
 
     /**
@@ -16,9 +22,8 @@ class SAAnalyzer {
      * @param sa
      * @returns {Promise<SAAnalyzerOutput>}
      */
-    invoke(sa){
+    invoke(sa) {
         const that = this;
-        const output = new SAAnalyzerOutput();
 
 
         /**
@@ -27,7 +32,7 @@ class SAAnalyzer {
          * @param out
          * @returns {Promise<any[]>}
          */
-        const func_tagEmotion = function(sa, out){
+        const func_tagEmotion = function (sa, out) {
             return Promise.all([
                 func_tagText(sa.erhebungsphase.beschreibung).then(value => out.sa.erhebungsphase.beschreibung_tagged = value),
                 func_tagTextArray(sa.erhebungsphase.interpretation).then(value => out.sa.erhebungsphase.interpretation_tagged = value),
@@ -50,12 +55,12 @@ class SAAnalyzer {
          * @param text
          * @returns {Promise<any>}
          */
-        const func_tagText = function(text){
+        const func_tagText = function (text) {
             return new Promise((resolve, reject) => {
-                if(!text){
+                if (!text) {
                     resolve(undefined);
                 }
-                that.treeTager.tagText(text, (treeTaggerResult) =>{
+                that.treeTager.tagText(text, (treeTaggerResult) => {
                     const filterListForEmotion = tagHelper.filterListForEmotionalAnalyse(treeTaggerResult);
                     that.emotionTagger.tagAll(filterListForEmotion)
                         .then((emotionTaggerResult) => {
@@ -71,11 +76,13 @@ class SAAnalyzer {
          * @param arrayText
          * @returns {Promise<any[]>}
          */
-        const func_tagTextArray = function(arrayText){
+        const func_tagTextArray = function (arrayText) {
             const promises = [];
 
-            for(let i = 0; i < arrayText.length; i++){
-                promises.push(func_tagText(arrayText[i]));
+            if(arrayText){
+                for (let i = 0; i < arrayText.length; i++) {
+                    promises.push(func_tagText(arrayText[i]));
+                }
             }
 
             return Promise.all(promises);
@@ -96,18 +103,76 @@ class SAAnalyzer {
                 out.sa.erhebungsphase.ziel_nicht_erreicht_grund_tagged
             ];
             const outAnalyze = flattenDeep(arrays);
+            const outAnalyzeClear = outAnalyze.filter((x) => !!x);
+            const filterListForEmotion = tagHelper.filterListForEmotionalAnalyse(outAnalyzeClear);
 
-            const filterListForEmotion = tagHelper.filterListForEmotionalAnalyse(outAnalyze);
-            const analyzeResult = analyzerEmotion.analyseTaggedText(filterListForEmotion, tagHelper.countWords(outAnalyze));
+            const analyzeResult = analyzerEmotion.analyseTaggedText(filterListForEmotion, tagHelper.countWords(outAnalyzeClear));
 
             return analyzeResult;
         };
+
+        const func_analyzeQuality = function (out) {
+            const korrektur_list = [];
+
+            const emotionResult = analyzerEmotion.analyseTaggedText(tagHelper.filterListForEmotionalAnalyse(out.sa.erhebungsphase.beschreibung_tagged), tagHelper.countWords(out.sa.erhebungsphase.beschreibung_tagged));
+            if(Math.abs(emotionResult.weight) > that.thresholdWeight ||
+                emotionResult.senseRateOverAll > that.thresholdSenseRateAll ||
+                emotionResult.senseRateInscpectedList > that.thresholdSenseRateInspectedList){
+
+                korrektur_list.push(new KorrekturModel("beschreibung", "Die Beschreibung der Situation ist sehr subjektiv/emotional."));
+            }
+
+            for(let i = 0; i < out.sa.erhebungsphase.interpretation_tagged.length; i++){
+                const countWords = tagHelper.countWords(out.sa.erhebungsphase.interpretation_tagged[i]);
+                const countSentences = tagHelper.countSentences(out.sa.erhebungsphase.interpretation_tagged[i]);
+
+                if(countWords > that.thresholdWordsNormal){
+                    korrektur_list.push(new KorrekturModel("interpretation[" + i + "]", "Die " + (i + 1) + ". Interpretation ist zu ausfuehrlich (zu viele Woerter)"));
+                } else if(countSentences > 1){
+                    korrektur_list.push(new KorrekturModel("interpretation[" + i + "]", "Die " + (i + 1) + ". Interpretation ist zu ausfuehrlich (zu viele Saetze)"));
+                }
+            }
+
+            const countWordsErgebnisWunsch = tagHelper.countWords(out.sa.erhebungsphase.ergebnis_wunsch_tagged);
+            const countSentencesEgebnis = tagHelper.countSentences(out.sa.erhebungsphase.ergebnis_wunsch_tagged);
+            if(countWordsErgebnisWunsch > that.thresholdWordsNormal){
+                korrektur_list.push(new KorrekturModel("ergebnis_wunsch", "Das gewuenschte Ergebnis ist zu ausfuehrlich (zu viele Woerter)"));
+            } else if(countSentencesEgebnis > 1){
+                korrektur_list.push(new KorrekturModel("ergebnis_wunsch", "Das gewuenschte Ergebnis ist zu ausfuehrlich (zu viele Saetze)"));
+            }
+
+            for(let i = 0; i < out.sa.loesungsphase.revision_tagged.length; i++){
+                const countWords = tagHelper.countWords(out.sa.loesungsphase.revision_tagged[i]);
+                const countSentences = tagHelper.countSentences(out.sa.loesungsphase.revision_tagged[i]);
+
+                console.log(countWords);
+
+                if(countWords > that.thresholdWordsNormal){
+                    korrektur_list.push(new KorrekturModel("revision[" + i + "]", "Die " + (i + 1) + ". Revision ist zu ausfuehrlich (zu viele Woerter)"));
+                } else if(countSentences > 1){
+                    korrektur_list.push(new KorrekturModel("revision[" + i + "]", "Die " + (i + 1) + ". Revision ist zu ausfuehrlich (zu viele Saetze)"));
+                }
+            }
+
+            for(let i = 0; i < out.sa.loesungsphase.schlachtrufe_tagged.length; i++){
+                const countWords = tagHelper.countWords(out.sa.loesungsphase.schlachtrufe_tagged[i]);
+
+                if(countWords > that.thresholdWordsShort){
+                    korrektur_list.push(new KorrekturModel("schlachtrufe[" + i + "]", "Der " + (i + 1) + ". Schlachtruf ist zu ausfuehrlich (zu viele Woerter)"));
+                }
+            }
+
+            return korrektur_list;
+
+        };
+
+        const output = new SAAnalyzerOutput();
 
         return func_tagEmotion(sa, output)
             .then(() => {
                 func_analyzeEmotion(output);
                 output.result = func_analyzeEmotion(output);
-
+                output.result.korrektur_list = func_analyzeQuality(output);
                 return output
             });
     }
@@ -115,6 +180,6 @@ class SAAnalyzer {
 
 }
 
-module.exports = function(dictManager){
+module.exports = function (dictManager) {
     return new SAAnalyzer(dictManager);
 };

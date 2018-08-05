@@ -50,43 +50,43 @@ function httpPostAsync(theUrl, data, callback) {
 }
 
 function init() {
-    GC.AUTH.config({
-        clientId: window.clientId,
-        clientURL: window.clientURL,
-        environment: 'development'
-    });
-
-    GC.AUTH.loggedIn.then((isLoggedIn) => {
-        drawLoginState();
-    });
+    // GC.AUTH.config({
+    //     clientId: window.clientId,
+    //     clientURL: window.clientURL,
+    //     environment: 'development'
+    // });
+    //
+    // GC.AUTH.loggedIn.then((isLoggedIn) => {
+    //     drawLoginState();
+    // });
 
     cryptServer = new JSEncrypt();
     showKeysServer("");
 
-    // httpGetAsync('auth/gctoken', (response) =>{
-    //     const data = JSON.parse(response);
-    //     console.log(data);
-    //     if(data.token && data.private_key){
-    //         GC.SDK.setup(window.clientId, 'development', data.private_key, () => {
-    //             return new Promise((resolve) => resolve(data.token))
-    //         }).then(() =>{
-    //             drawLoginState();
-    //         });
-    //     } else {
-    //         drawLoginState();
-    //     }
-    // });
+    httpGetAsync('auth/gctoken', (response) =>{
+        const data = JSON.parse(response);
+        console.log(data);
+        if(data.token && data.private_key){
+            GC.SDK.setup(window.clientId, 'development', data.private_key, () => {
+                return new Promise((resolve) => resolve(data.token))
+            }).then(() =>{
+                drawLoginState();
+            });
+        } else {
+            drawLoginState();
+        }
+    });
 }
 
 function login() {
-    GC.AUTH.login();
-    // GC.SDK.createCAP()
-    //     .then(({publicKey, privateKey}) => {
-    //         httpPostAsync(`${clientURL}/gckeys`, { private_key: privateKey, public_key: publicKey },
-    //             function () {
-    //                 window.location.href = `${window.clientURL}/gclogin?public_key=${publicKey}`;
-    //             });
-    //     });
+    // GC.AUTH.login();
+    GC.SDK.createCAP()
+        .then(({publicKey, privateKey}) => {
+            httpPostAsync(`${clientURL}/gckeys`, { private_key: privateKey, public_key: publicKey },
+                function () {
+                    window.location.href = `${window.clientURL}/gclogin?public_key=${publicKey}`;
+                });
+        });
 }
 
 function logout() {
@@ -228,11 +228,13 @@ function init100Records() {
             creationDate: new Date(),
             annotations: ["Situationsanalyse"] //fuer spätere Filterung
         });
-        GC.SDK.uploadDocument(userId, document)
-            .then((response) => {
-                uploadedDocuments++;
-                console.log("Document uploaded: ", uploadedDocuments);
-            });
+        setTimeout(() => {
+            GC.SDK.uploadDocument(userId, document)
+                .then((response) => {
+                    uploadedDocuments++;
+                    console.log("Document uploaded: ", uploadedDocuments);
+                });
+        }, i * 1000);
     }
 }
 

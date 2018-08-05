@@ -1,7 +1,7 @@
 const ETagHelper = require('../model/ETagTable');
 
-class TagHelper{
-    constructor(){
+class TagHelper {
+    constructor() {
         this.analyzeEmotionWhiteList = [
             ETagHelper.ADJA,
             ETagHelper.ADJD,
@@ -34,7 +34,7 @@ class TagHelper{
 
         this.blackListWords = [
             ETagHelper.$Punkt,
-            ETagHelper.$Komma,
+            ETagHelper.$Koma,
             ETagHelper.$Klammer,
 
             ETagHelper.XY
@@ -46,8 +46,33 @@ class TagHelper{
      * @param treeTaggerOut
      * @returns number
      */
-    countWords(treeTaggerOut){
+    countWords(treeTaggerOut) {
         return treeTaggerOut.filter(x => this.blackListWords.indexOf(x.tag) === -1).length;
+    }
+
+    /**
+     *
+     * @param treeTaggerOut
+     * @returns {number}
+     */
+    countSentences(treeTaggerOut) {
+        let counter = 0;
+        if (treeTaggerOut) {
+            counter = 1;
+        } else {
+            return counter;
+        }
+
+        let markFoundEndSentence = false;
+        for (let i = 0; i < treeTaggerOut.length; i++) {
+            if(treeTaggerOut[i].tag === ETagHelper.$Punkt){
+                markFoundEndSentence = true;
+            } else if (markFoundEndSentence) {
+                markFoundEndSentence = false;
+                counter++;
+            }
+        }
+        return counter;
     }
 
     /**
@@ -55,7 +80,7 @@ class TagHelper{
      * @param treeTaggerOut
      * @returns [any]
      */
-    filterListForEmotionalAnalyse(treeTaggerOut){
+    filterListForEmotionalAnalyse(treeTaggerOut) {
         return treeTaggerOut.filter(x => this.analyzeEmotionWhiteList.indexOf(x.tag) !== -1);
     }
 
