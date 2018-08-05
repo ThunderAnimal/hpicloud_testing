@@ -108,6 +108,16 @@ __HINT:__ For Linux/Mac the command ``tag-german`` must be available in the same
 export PATH=$PATH:/tree-tagger/bin/ && mpm start
 ```
 
+## Test / Demo
+Just visit the page http://localhost:3000.
+
+There you can test the [HTTP-Endpoints](#http-endpoints).
+
+The code for the dummy-Page is provided in following files:
+* _views/index.html_ (View)
+* _public/js/client.js_ (Logic)
+
+
 ## HTTP Endpoints
 
 ### Objects
@@ -139,6 +149,65 @@ __EmotionResult:__
     senseRateInspectedList: number, // 0 - 1
 }
 ```
+
+__SAModel:__
+```
+{
+    erhebungsphase: {
+        beschreibung: string,
+        interpretation:[string],
+        verhalten: string,
+        kiesler_kreis: string,
+        ergebnis_real: string,
+        ergebnis_wunsch: string,
+        ziel_erreicht: boolean,
+        ziel_nicht_erreicht_grund: string,
+    },
+    loesungsphase: {
+        revision: [string],
+        schlachtrufe: [string],
+        zielfuehrendes_verhalten: string,
+        take_home_message: string,
+        transfer: [string]
+    }
+}
+```
+__SAResponse:__
+```
+{
+    sa: {
+        erhebungsphase: {
+            beschreibung_tagged: [EmotionTagged],
+            interpretation_tagged:[[EmotionTagged]],
+            verhalten_tagged: [EmotionTagged],
+            kiesler_kreis: string,
+            ergebnis_real_tagged: [EmotionTagged],
+            ergebnis_wunsch_tagged: [EmotionTagged],
+            ziel_erreicht: boolean,
+            ziel_nicht_erreicht_grund_tagged: [EmotionTagged],
+        },
+        loesungsphase: {
+            revision_tagged: [[EmotionTagged]],
+            schlachtrufe_tagged: [[EmotionTagged]],
+            zielfuehrendes_verhalten_tagged: [EmotionTagged],
+            take_home_message_tagged: [EmotionTagged],
+            transfer_tagged: [[EmotionTagged]]
+        }
+    },
+    result: {
+        emotion: string, //ekel, freude, furcht, trauer, ueberraschung, verachtung, wut
+        polarity: string, // negative, neutral, positive
+        weight: number, // -1 - 1
+        senseRateOverAll: number, // 0 - 1
+        senseRateInspectedList: number, // 0 - 1
+        korrektur_list: [{
+            feld: string,
+            beschreibung: string
+        }]
+    }
+}
+```
+
 
 ### Routes
 
@@ -204,6 +273,38 @@ __EmotionResult:__
 | Request:      | Query: text |
 | Response:     | JSON: {tagged: [EmotionTagged], result: EmotionResult} |
 | Description:  | Tagged the german emotion of a text and give a result back. Test API to see that the tagging works |
+
+| Route:        | /api/v1/key |
+| ---    | ---  |
+| Method:       | GET |
+| Request:      | - |
+| Response:     | JSON: {publicKey: string (pcks8 scheme as pem)} |
+| Description:  | Get Public Key pem format to encrypt data before sending to server |
+
+| Route:        | /api/v1/check_secure_connection |
+| ---    | ---  |
+| Method:       | POST |
+| Request before encryption: | Body: {data: Object, key: string (random generated key)} |
+| Request:      | Body: {data: AES encrypted string with random generated key, key: RSA encrypted string with publicKey from server} |
+| Response:     | JSON: {data: AES encrypted string with key from the request} |
+| Response after decryption: | JSON: {data: Object} |
+| Description:  | Test the secure connection server and if the encryption and decryption between server and client works |
+
+| Route:        | /api/v1/sa_analyze |
+| ---    | ---  |
+| Method:       | POST |
+| Request before encryption: | Body: { sa: SAModel, key: string (random generated key)  |
+| Request:      | Body: { sa: AES encrypted string with random generated key,  key: RSA encrypted string with publicKey from server} |
+| Response:     | JSON: {data: AES encrypted string with key from the request} |
+| Response after decryption: | JSON: {data: SAResponse} |
+| Description:  | Text-Mining situationanlyze (SECURE) |
+
+| Route:        | /api/v1/sa_analyze_plain |
+| ---    | ---  |
+| Method:       | POST |
+| Request:      | Body: { sa: SAModel } |
+| Response:     | JSON: { SAResponse } |
+| Description:  | Text-Mining situationanlyze (UNSECURE) |
 
 ## WebSocket Connections
 
